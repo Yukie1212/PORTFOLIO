@@ -75,6 +75,27 @@
     .status-card h3 { margin: 0 0 14px; font: 600 14px Arial, sans-serif; }
     .progress { height: 7px; margin: 10px 0 8px; background: #e7ece8; border-radius: 99px; overflow: hidden; }
     .progress span { display: block; width: 87.5%; height: 100%; background: var(--green); }
+    .verification-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .verification-card { background: var(--white); border: 0; border-radius: 5px; padding: 22px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
+    .verification-card h3 { margin: 0 0 6px; font: 600 17px Arial, sans-serif; }
+    .verification-card p { margin: 0 0 18px; color: var(--muted); font: 13px/1.6 Arial, sans-serif; }
+    .face-scan { display: grid; grid-template-columns: 84px 1fr; gap: 16px; align-items: center; }
+    .face-frame { position: relative; display: grid; place-items: center; width: 84px; height: 84px; border: 2px solid #8cc5aa; border-radius: 50%; background: #e5f2eb; color: var(--green); font: 700 25px Arial, sans-serif; }
+    .face-frame::after { content: ''; position: absolute; inset: 8px; border: 1px dashed #7db798; border-radius: 50%; }
+    .verification-status { color: var(--green); font: 700 12px Arial, sans-serif; }
+    .verification-detail { display: block; margin-top: 5px; color: var(--muted); font: 12px Arial, sans-serif; }
+    .verify-button { margin-top: 16px; border: 1px solid var(--green); border-radius: 4px; padding: 9px 12px; background: #fff; color: var(--green); font: 700 12px Arial, sans-serif; }
+    .verify-button:hover { background: var(--green); color: #fff; }
+    .map-preview { position: relative; min-height: 130px; overflow: hidden; border: 1px solid #d4e2db; border-radius: 4px; background: #e6f0eb; background-image: linear-gradient(28deg, transparent 47%, #c7dcd0 48%, #c7dcd0 50%, transparent 51%), linear-gradient(118deg, transparent 46%, #c7dcd0 47%, #c7dcd0 49%, transparent 50%); }
+    .map-preview::before, .map-preview::after { content: ''; position: absolute; background: #fff; opacity: .75; }
+    .map-preview::before { width: 115%; height: 10px; top: 50%; left: -8%; transform: rotate(-18deg); }
+    .map-preview::after { width: 10px; height: 120%; top: -10%; left: 48%; transform: rotate(28deg); }
+    .map-pin { position: absolute; z-index: 1; top: 43%; left: 51%; width: 18px; height: 18px; border: 4px solid #fff; border-radius: 50% 50% 50% 0; background: var(--green); transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(23,33,31,.2); }
+    .geo-details { display: flex; justify-content: space-between; gap: 12px; margin-top: 13px; font: 12px Arial, sans-serif; }
+    .geo-details span { color: var(--muted); }
+    .geo-details strong { color: var(--green); }
+    .geo-button { margin-top: 13px; border: 0; background: transparent; color: var(--green); padding: 0; font: 700 12px Arial, sans-serif; }
+    @media (max-width: 760px) { .verification-grid { grid-template-columns: 1fr; } }
     @media (max-width: 900px) { .app { grid-template-columns: 72px 1fr; } .sidebar .brand { font-size: 0; padding-left: 12px; } .sidebar .brand span { font-size: 20px; } .workspace, .nav a span, .sidebar-note { display: none; } .nav a { text-align: center; font-size: 0; } .nav a::first-letter { font-size: 18px; } .main { padding: 24px 20px 40px; } }
     @media (max-width: 680px) { .app { display: block; } .sidebar { display: block; padding: 14px 16px; } .sidebar .brand { display: inline-block; padding: 0; } .nav { display: inline-flex; float: right; } .nav a { padding: 8px; } .main { clear: both; padding: 25px 16px 35px; } .appbar { align-items: flex-start; flex-direction: column; margin-bottom: 25px; } .main .metrics { grid-template-columns: repeat(2, 1fr); } .main .dashboard { grid-template-columns: 1fr; } .app-actions { width: 100%; justify-content: space-between; } .panel { overflow-x: auto; } table { min-width: 560px; } }
   </style>
@@ -86,8 +107,17 @@
       <section class="metrics"><div class="metric"><span class="label">Present today</span><strong>42</strong><small>of 48 employees</small></div><div class="metric"><span class="label">Late arrivals</span><strong>03</strong><small>requires review</small></div><div class="metric"><span class="label">On leave</span><strong>03</strong><small>approved requests</small></div><div class="metric"><span class="label">Devices online</span><strong>04</strong><small>all systems operational</small></div></section>
       <div class="section-title" id="attendance"><h2>Attendance activity</h2><span class="filter">Today · March 24, 2026 ▾</span></div>
       <section class="dashboard"><div class="panel"><div class="panel-head"><h2>Recent check-ins</h2><span class="date">48 total records</span></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Time in</th><th>Device</th><th>Status</th></tr></thead><tbody><tr><td class="employee"><span class="avatar">MS</span>Maria Santos</td><td>07:42 AM</td><td>RFID Turnstile</td><td><span class="pill">Present</span></td></tr><tr><td class="employee"><span class="avatar">DR</span>Daniel Reyes</td><td>07:56 AM</td><td>Fingerprint</td><td><span class="pill">Present</span></td></tr><tr><td class="employee"><span class="avatar">AC</span>Angela Cruz</td><td>08:18 AM</td><td>Mobile check-in</td><td><span class="pill" style="background:#fff0d9;color:#a56a17">Late</span></td></tr><tr><td class="employee"><span class="avatar">MV</span>Mark Villanueva</td><td>08:02 AM</td><td>Facial recognition</td><td><span class="pill">Present</span></td></tr></tbody></table></div></div><aside class="panel" id="devices"><div class="panel-head"><h2>Live events</h2><span class="date">Updated now</span></div><ul class="event-list"><li><i></i><b>RFID turnstile accepted</b><span>2m ago</span></li><li><i></i><b>Fingerprint terminal synced</b><span>8m ago</span></li><li><i></i><b>Mobile location verified</b><span>14m ago</span></li><li><i></i><b>Daily sync completed</b><span>21m ago</span></li></ul><div class="status-card"><h3>Device availability</h3><div style="display:flex;justify-content:space-between;font:12px Arial,sans-serif"><span>4 of 4 online</span><b class="online">87.5% attendance</b></div><div class="progress"><span></span></div><small style="color:var(--muted);font:11px Arial,sans-serif">All connected devices are responding.</small></div></aside></section>
+      <div class="section-title"><h2>Verification tools</h2><span class="date">Sample workflow</span></div><section class="verification-grid"><article class="verification-card"><h3>Facial recognition</h3><p>Verify an employee identity before recording the attendance event.</p><div class="face-scan"><div class="face-frame">AC</div><div><span class="verification-status" id="faceStatus">Match verified</span><span class="verification-detail">Angela Cruz · 98.4% confidence</span></div></div><button class="verify-button" id="faceButton" type="button">Run verification</button></article><article class="verification-card"><h3>Geolocation check</h3><p>Confirm the employee is inside the approved attendance area.</p><div class="map-preview" aria-label="Sample location map"><span class="map-pin"></span></div><div class="geo-details"><span id="geoStatus">Within geofence · 42 m</span><strong>Warehouse office</strong></div><button class="geo-button" id="geoButton" type="button">Refresh location</button></article></section>
       <div class="section-title" id="reports"><h2>What this system demonstrates</h2></div><section class="panel"><p style="max-width:760px;color:var(--muted);font:14px/1.7 Arial,sans-serif;margin:0">This interface represents the administrative dashboard for an attendance platform with RFID, facial recognition, ZKTeco fingerprint integration, geofenced validation, offline synchronization, and a custom RFID turnstile.</p></section>
     </main>
   </div>
+  <script>
+    const faceButton = document.getElementById('faceButton')
+    const faceStatus = document.getElementById('faceStatus')
+    const geoButton = document.getElementById('geoButton')
+    const geoStatus = document.getElementById('geoStatus')
+    faceButton.addEventListener('click', () => { faceStatus.textContent = 'Match verified just now'; faceButton.textContent = 'Verification complete' })
+    geoButton.addEventListener('click', () => { geoStatus.textContent = 'Location refreshed · 38 m'; geoButton.textContent = 'Location updated' })
+  </script>
 </body>
 </html>
