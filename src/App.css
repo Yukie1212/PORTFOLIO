@@ -45,6 +45,9 @@ h2{font-size:clamp(2rem,3.2vw,3.2rem)}
 .project-title h3{font-size:1.55rem;line-height:1.2;letter-spacing:-.03em}
 .project>p{font-size:.92rem;line-height:1.7}
 .project-action{border-bottom:1px solid #b8d5c7;padding-bottom:3px}
+.project-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.project-demo-button{display:inline-block;margin-top:18px;border:1px solid #23785e;border-radius:4px;padding:8px 12px;color:#23785e;font-size:.8125rem;font-weight:700}
+.project-demo-button:hover{background:#23785e;color:#fff}
 .about-copy{font-size:.95rem;line-height:1.75}
 .career-list h3,.capability h3{font-size:1.15rem}
 .career-list article>p:last-child,.capability p{font-size:.92rem;line-height:1.7}
