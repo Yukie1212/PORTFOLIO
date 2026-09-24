@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance Monitoring System | Demo</title>
+  <style>
+    :root { color-scheme: light; --ink: #17211f; --muted: #687571; --line: #d9e1dc; --paper: #f5f7f3; --white: #fff; --green: #1c765c; --soft: #e4f1ea; --amber: #a56a17; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 Georgia, serif; }
+    .shell { max-width: 1180px; margin: auto; padding: 28px 22px 56px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid var(--line); padding-bottom: 22px; }
+    .brand { font: 700 20px/1 Arial, sans-serif; letter-spacing: -.03em; }
+    .brand span { color: var(--green); }
+    .back { color: var(--green); font: 600 12px Arial, sans-serif; text-decoration: none; text-transform: uppercase; letter-spacing: .08em; }
+    .intro { padding: 58px 0 34px; display: flex; justify-content: space-between; gap: 40px; align-items: end; }
+    .eyebrow, .label { color: var(--green); font: 700 11px Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 700px; margin: 10px 0 12px; font-size: clamp(38px, 6vw, 72px); line-height: .98; font-weight: 400; letter-spacing: -.045em; }
+    .intro p { max-width: 320px; color: var(--muted); margin: 0; }
+    .notice { background: var(--soft); border: 1px solid #c9e1d4; padding: 14px 16px; color: #28624f; font: 13px Arial, sans-serif; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+    .metric, .panel { background: var(--white); border: 1px solid var(--line); }
+    .metric { padding: 19px; }
+    .metric strong { display: block; font: 700 32px Arial, sans-serif; margin: 9px 0 2px; }
+    .metric small { color: var(--muted); font: 12px Arial, sans-serif; }
+    .dashboard { display: grid; grid-template-columns: 1.45fr .8fr; gap: 12px; }
+    .panel { padding: 22px; }
+    .panel-head { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 6px; }
+    h2 { font-size: 23px; font-weight: 400; margin: 0; }
+    .date { color: var(--muted); font: 12px Arial, sans-serif; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 15px 8px; border-bottom: 1px solid #edf0ed; }
+    th { color: var(--muted); font: 700 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+    td { font-size: 14px; }
+    td:nth-child(2), td:nth-child(3) { font-family: Arial, sans-serif; font-size: 13px; }
+    .pill { display: inline-block; border-radius: 999px; padding: 4px 9px; background: var(--soft); color: var(--green); font: 700 10px Arial, sans-serif; text-transform: uppercase; }
+    .side-list { list-style: none; padding: 0; margin: 0; }
+    .side-list li { display: flex; justify-content: space-between; gap: 15px; padding: 16px 0; border-bottom: 1px solid #edf0ed; font-family: Arial, sans-serif; font-size: 13px; }
+    .side-list span { color: var(--muted); }
+    .online { color: var(--green) !important; font-weight: 700; }
+    footer { color: var(--muted); font: 12px Arial, sans-serif; margin-top: 24px; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 238px 1fr; background: #f6f8f6; }
+    .sidebar { background: #17211f; color: #d9e5df; padding: 25px 16px; display: flex; flex-direction: column; }
+    .sidebar .brand { color: #fff; padding: 0 12px 35px; }
+    .sidebar .brand span { color: #8cd4b4; }
+    .workspace { color: #8fa49b; font: 10px Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; padding: 0 12px 10px; }
+    .nav { display: grid; gap: 4px; }
+    .nav a { color: #b7c9c0; text-decoration: none; padding: 12px; border-radius: 4px; font: 13px Arial, sans-serif; }
+    .nav a.active, .nav a:hover { color: #fff; background: #2b5145; }
+    .sidebar-note { margin-top: auto; border-top: 1px solid #30423c; padding: 18px 12px 0; color: #8fa49b; font: 11px/1.6 Arial, sans-serif; }
+    .main { min-width: 0; padding: 26px 34px 46px; }
+    .appbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 38px; }
+    .appbar h1 { font: 600 25px Arial, sans-serif; letter-spacing: -.04em; margin: 0 0 5px; }
+    .appbar p { color: var(--muted); font: 13px Arial, sans-serif; margin: 0; }
+    .app-actions { display: flex; align-items: center; gap: 14px; }
+    .demo-badge { border: 1px solid #c9e1d4; background: var(--soft); color: var(--green); padding: 9px 12px; font: 700 10px Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+    .back { border: 1px solid var(--line); background: #fff; padding: 10px 12px; }
+    .intro, .topbar, .notice, footer { display: none; }
+    .main .metrics { grid-template-columns: repeat(4, 1fr); }
+    .metric { border: 0; border-radius: 5px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
+    .metric strong { color: var(--ink); }
+    .section-title { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin: 32px 0 14px; }
+    .section-title h2 { font: 600 17px Arial, sans-serif; letter-spacing: -.02em; }
+    .filter { border: 1px solid var(--line); color: var(--muted); background: #fff; padding: 9px 12px; font: 12px Arial, sans-serif; }
+    .main .dashboard { grid-template-columns: minmax(0, 1.5fr) minmax(260px, .7fr); }
+    .panel { border: 0; border-radius: 5px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
+    .table-wrap { overflow-x: auto; }
+    .avatar { display: inline-grid; place-items: center; width: 27px; height: 27px; margin-right: 8px; border-radius: 50%; background: #dcece3; color: var(--green); font: 700 10px Arial, sans-serif; vertical-align: middle; }
+    .employee { white-space: nowrap; }
+    .event-list { list-style: none; padding: 0; margin: 0; }
+    .event-list li { display: grid; grid-template-columns: 9px 1fr auto; gap: 10px; align-items: center; padding: 14px 0; border-bottom: 1px solid #edf0ed; font: 12px Arial, sans-serif; }
+    .event-list i { width: 8px; height: 8px; background: #55a77f; border-radius: 50%; }
+    .event-list span { color: var(--muted); font-size: 11px; }
+    .status-card { margin-top: 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .status-card h3 { margin: 0 0 14px; font: 600 14px Arial, sans-serif; }
+    .progress { height: 7px; margin: 10px 0 8px; background: #e7ece8; border-radius: 99px; overflow: hidden; }
+    .progress span { display: block; width: 87.5%; height: 100%; background: var(--green); }
+    @media (max-width: 900px) { .app { grid-template-columns: 72px 1fr; } .sidebar .brand { font-size: 0; padding-left: 12px; } .sidebar .brand span { font-size: 20px; } .workspace, .nav a span, .sidebar-note { display: none; } .nav a { text-align: center; font-size: 0; } .nav a::first-letter { font-size: 18px; } .main { padding: 24px 20px 40px; } }
+    @media (max-width: 680px) { .app { display: block; } .sidebar { display: block; padding: 14px 16px; } .sidebar .brand { display: inline-block; padding: 0; } .nav { display: inline-flex; float: right; } .nav a { padding: 8px; } .main { clear: both; padding: 25px 16px 35px; } .appbar { align-items: flex-start; flex-direction: column; margin-bottom: 25px; } .main .metrics { grid-template-columns: repeat(2, 1fr); } .main .dashboard { grid-template-columns: 1fr; } .app-actions { width: 100%; justify-content: space-between; } .panel { overflow-x: auto; } table { min-width: 560px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar"><div class="brand">attend<span>✳</span></div><div class="workspace">Workspace</div><nav class="nav" aria-label="Demo navigation"><a class="active" href="#dashboard">▦ <span>Dashboard</span></a><a href="#attendance">◷ <span>Attendance</span></a><a href="#devices">⌁ <span>Devices</span></a><a href="#reports">▤ <span>Reports</span></a></nav><div class="sidebar-note">READ-ONLY DEMO<br>Sample data only<br><br>Built for portfolio review</div></aside>
+    <main class="main" id="dashboard"><header class="appbar"><div><h1>Good morning, Angelo</h1><p>Here is today's attendance overview.</p></div><div class="app-actions"><span class="demo-badge">Demo mode</span><a class="back" href="./">Portfolio ↗</a></div></header>
+      <section class="metrics"><div class="metric"><span class="label">Present today</span><strong>42</strong><small>of 48 employees</small></div><div class="metric"><span class="label">Late arrivals</span><strong>03</strong><small>requires review</small></div><div class="metric"><span class="label">On leave</span><strong>03</strong><small>approved requests</small></div><div class="metric"><span class="label">Devices online</span><strong>04</strong><small>all systems operational</small></div></section>
+      <div class="section-title" id="attendance"><h2>Attendance activity</h2><span class="filter">Today · March 24, 2026 ▾</span></div>
+      <section class="dashboard"><div class="panel"><div class="panel-head"><h2>Recent check-ins</h2><span class="date">48 total records</span></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Time in</th><th>Device</th><th>Status</th></tr></thead><tbody><tr><td class="employee"><span class="avatar">MS</span>Maria Santos</td><td>07:42 AM</td><td>RFID Turnstile</td><td><span class="pill">Present</span></td></tr><tr><td class="employee"><span class="avatar">DR</span>Daniel Reyes</td><td>07:56 AM</td><td>Fingerprint</td><td><span class="pill">Present</span></td></tr><tr><td class="employee"><span class="avatar">AC</span>Angela Cruz</td><td>08:18 AM</td><td>Mobile check-in</td><td><span class="pill" style="background:#fff0d9;color:#a56a17">Late</span></td></tr><tr><td class="employee"><span class="avatar">MV</span>Mark Villanueva</td><td>08:02 AM</td><td>Facial recognition</td><td><span class="pill">Present</span></td></tr></tbody></table></div></div><aside class="panel" id="devices"><div class="panel-head"><h2>Live events</h2><span class="date">Updated now</span></div><ul class="event-list"><li><i></i><b>RFID turnstile accepted</b><span>2m ago</span></li><li><i></i><b>Fingerprint terminal synced</b><span>8m ago</span></li><li><i></i><b>Mobile location verified</b><span>14m ago</span></li><li><i></i><b>Daily sync completed</b><span>21m ago</span></li></ul><div class="status-card"><h3>Device availability</h3><div style="display:flex;justify-content:space-between;font:12px Arial,sans-serif"><span>4 of 4 online</span><b class="online">87.5% attendance</b></div><div class="progress"><span></span></div><small style="color:var(--muted);font:11px Arial,sans-serif">All connected devices are responding.</small></div></aside></section>
+      <div class="section-title" id="reports"><h2>What this system demonstrates</h2></div><section class="panel"><p style="max-width:760px;color:var(--muted);font:14px/1.7 Arial,sans-serif;margin:0">This interface represents the administrative dashboard for an attendance platform with RFID, facial recognition, ZKTeco fingerprint integration, geofenced validation, offline synchronization, and a custom RFID turnstile.</p></section>
+    </main>
+  </div>
+</body>
+</html>
