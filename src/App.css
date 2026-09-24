@@ -9,6 +9,7 @@ body{background:#f5f6f3}
 .brand{color:#26312e;font-size:2rem}
 .brand span,.eyebrow,h1 span,.project-title>span,.project-action,.capability .plus{color:#1f765d}
 .header-note,.section-heading>p,.hero-bottom p,.project>p,.about-copy,.capability p,.career-list article>p:last-child,.edition,.project-meta,footer{color:#687671}
+.career-date{color:#1f765d}
 .nav a:hover{color:#1f765d}
 .menu-toggle{border-color:#cbd5cf;color:#26312e}
 .hero{padding-top:40px}
