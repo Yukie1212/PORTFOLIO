@@ -92,7 +92,7 @@
     .verification-detail { display: block; margin-top: 5px; color: var(--muted); font: 12px Arial, sans-serif; }
     .verify-button { margin-top: 16px; border: 1px solid var(--green); border-radius: 4px; padding: 9px 12px; background: #fff; color: var(--green); font: 700 12px Arial, sans-serif; }
     .verify-button:hover { background: var(--green); color: #fff; }
-    .map-preview { position: relative; min-height: 130px; overflow: hidden; border: 1px solid #d4e2db; border-radius: 4px; background: #e6f0eb; background-image: linear-gradient(28deg, transparent 47%, #c7dcd0 48%, #c7dcd0 50%, transparent 51%), linear-gradient(118deg, transparent 46%, #c7dcd0 47%, #c7dcd0 49%, transparent 50%); }
+    .map-preview { position: relative; min-height: 130px; overflow: hidden; border: 1px solid #d4e2db; border-radius: 4px; background: #e6f0eb; background-image: linear-gradient(28deg, transparent 47%, #c7dcd0 48%, #c7dcd0 50%, transparent 51%), linear-gradient(118deg, transparent 46%, #c7dcd0 47%, #c7dcd0 49%, transparent 50%); cursor: crosshair; }
     .map-preview::before, .map-preview::after { content: ''; position: absolute; background: #fff; opacity: .75; }
     .map-preview::before { width: 115%; height: 10px; top: 50%; left: -8%; transform: rotate(-18deg); }
     .map-preview::after { width: 10px; height: 120%; top: -10%; left: 48%; transform: rotate(28deg); }
@@ -172,6 +172,7 @@
     const locationError = error => { geoStatus.textContent = error.code === 1 ? 'Location permission denied' : 'Location unavailable'; geoStatus.style.color = '#b44949'; geoButton.textContent = 'Try location again' }
     const requestLocation = () => { if (!navigator.geolocation) { locationError({ code: 2 }); return } geoStatus.textContent = 'Checking your location...'; geoStatus.style.color = 'var(--muted)'; geoButton.textContent = 'Checking...'; navigator.geolocation.getCurrentPosition(updateLocation, locationError, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }) }
     geoButton.addEventListener('click', requestLocation)
+    document.querySelector('.map-preview').addEventListener('click', requestLocation)
     window.addEventListener('load', requestLocation)
     registrationFaceButton.addEventListener('click', async () => { if (!navigator.mediaDevices?.getUserMedia) { registrationFaceStatus.textContent = 'Camera unavailable'; return } try { registrationStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); registrationVideo.srcObject = registrationStream; registrationVideo.style.display = 'block'; registrationFaceStatus.textContent = 'Face captured · ready to save'; registrationFaceButton.textContent = 'Face captured' } catch { registrationFaceStatus.textContent = 'Camera permission denied' } })
     fingerButton.addEventListener('click', () => { fingerStatus.textContent = `${document.getElementById('fingerSelect').value} enrolled`; fingerButton.textContent = 'Enrolled' })
