@@ -80,10 +80,11 @@
     .verification-card h3 { margin: 0 0 6px; font: 600 17px Arial, sans-serif; }
     .verification-card p { margin: 0 0 18px; color: var(--muted); font: 13px/1.6 Arial, sans-serif; }
     .face-scan { display: grid; grid-template-columns: 84px 1fr; gap: 16px; align-items: center; }
-    .camera-stage { display: none; position: relative; margin: 14px 0 0; overflow: hidden; border-radius: 5px; background: #17211f; }
-    .camera-preview { display: block; width: 100%; max-height: 180px; object-fit: cover; }
-    .face-detection-box { position: absolute; top: 16%; left: 31%; width: 38%; height: 68%; border: 2px solid #8ee0b4; border-radius: 42%; box-shadow: 0 0 0 999px rgba(23,33,31,.2), 0 0 18px rgba(142,224,180,.7); pointer-events: none; }
-    .face-detection-box::before { content: 'FACE DETECTION'; position: absolute; top: -20px; left: 0; color: #8ee0b4; font: 700 9px Arial, sans-serif; letter-spacing: .1em; white-space: nowrap; }
+    .camera-stage { display: none; position: relative; min-height: 300px; margin: 14px 0 0; overflow: hidden; border-radius: 5px; background: #17211f; }
+    .camera-preview { display: block; width: 100%; min-height: 300px; max-height: 360px; object-fit: cover; }
+    .face-detection-box { position: absolute; top: 12%; left: 25%; width: 50%; height: 76%; border: 3px solid #8ee0b4; border-radius: 8px; box-shadow: 0 0 0 999px rgba(23,33,31,.18), 0 0 22px rgba(142,224,180,.85); pointer-events: none; }
+    .face-detection-box::before { content: 'FACE DETECTION'; position: absolute; top: -25px; left: 0; color: #8ee0b4; font: 700 11px Arial, sans-serif; letter-spacing: .1em; white-space: nowrap; }
+    .face-detection-box::after { content: ''; position: absolute; inset: -3px; border: 3px solid transparent; border-top-color: #d6ffe6; border-bottom-color: #d6ffe6; border-radius: 8px; }
     .face-frame { position: relative; display: grid; place-items: center; width: 84px; height: 84px; border: 2px solid #8cc5aa; border-radius: 50%; background: #e5f2eb; color: var(--green); font: 700 25px Arial, sans-serif; }
     .face-frame::after { content: ''; position: absolute; inset: 8px; border: 1px dashed #7db798; border-radius: 50%; }
     .verification-status { color: var(--green); font: 700 12px Arial, sans-serif; }
