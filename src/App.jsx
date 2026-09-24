@@ -18,8 +18,46 @@ const capabilities = [
 ]
 
 
+function HeroArt() {
+  return <svg className="technical-art" viewBox="0 0 600 440" fill="none" aria-hidden="true">
+    <rect width="600" height="440" fill="#e7efeb" />
+    <g stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+      <rect x="96" y="106" width="172" height="214" rx="8" fill="currentColor" fillOpacity=".08" />
+      <rect x="119" y="135" width="126" height="78" rx="4" />
+      <path d="M139 160h84m-84 25h57M137 247h91m-91 24h62" />
+      <circle cx="182" cy="289" r="16" />
+      <path d="M182 273v32m-16-16h32M307 287h128l-24 74H331l-24-74Zm15 0-27-83h-32M328 361h-10m100 0h-10" />
+      <circle cx="334" cy="378" r="16" />
+      <circle cx="407" cy="378" r="16" />
+      <rect x="330" y="118" width="106" height="63" rx="5" fill="currentColor" fillOpacity=".08" />
+      <path d="M350 143h66m-66 20h45M269 178l38 35m128-63 38-31M435 150h48" strokeDasharray="5 7" />
+      <path d="M468 125c20 16 20 44 0 60m20-76c32 25 32 67 0 92" opacity=".65" />
+    </g>
+    <g fill="currentColor" fontFamily="monospace" fontSize="11" opacity=".7"><text x="35" y="35">FIELD SYSTEMS / DATA + HARDWARE</text><text x="35" y="413">CONCEPT DIAGRAM · FROM IDEA TO DEPLOYMENT</text></g>
+  </svg>
+}
+
+function SmartCartArt() {
+  return <svg className="technical-art" viewBox="0 0 600 440" fill="none" aria-hidden="true">
+    <rect width="600" height="440" fill="currentColor" fillOpacity=".04" />
+    <g stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+      <path d="M130 174h62l30 143h215l42-112H207" fill="currentColor" fillOpacity=".12" />
+      <path d="M192 174 222 317m-15-80h233m-213 80h215M130 174l-22-28H78" />
+      <circle cx="250" cy="347" r="20" fill="currentColor" fillOpacity=".12" /><circle cx="414" cy="347" r="20" fill="currentColor" fillOpacity=".12" />
+      <path d="M250 367v14m164-14v14M277 174l-12-65h118l-7 65Z" fill="currentColor" fillOpacity=".18" />
+      <rect x="283" y="122" width="82" height="36" rx="3" fill="currentColor" fillOpacity=".12" />
+      <path d="M299 135h50m-50 12h33M478 173l35-18m-32 42 43-3M465 151l27-31" strokeDasharray="5 6" />
+      <path d="M493 104c29 19 29 55 0 74m22-91c43 28 43 80 0 108" opacity=".7" />
+      <path d="M411 202h24v35h-24zM417 209h12m-12 10h12" />
+    </g>
+    <g fill="currentColor" fontFamily="monospace" fontSize="11" opacity=".7"><text x="35" y="35">SHOP EASE / SMART CART</text><text x="35" y="413">BLE POSITIONING · LIVE PRICE · AISLE MAP</text></g>
+  </svg>
+}
+
 function TechnicalArt({ type = 'enclosure' }) {
   const artId = useId()
+  if (type === 'hero') return <HeroArt />
+  if (type === 'shop') return <SmartCartArt />
   return <svg className="technical-art" viewBox="0 0 600 440" fill="none" aria-hidden="true">
     <defs><pattern id={`grid-${artId}`} width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" stroke="currentColor" opacity=".1" /></pattern><linearGradient id={`face-${artId}`} x2="1" y2="1"><stop stopColor="currentColor" stopOpacity=".28"/><stop offset="1" stopColor="currentColor" stopOpacity=".03"/></linearGradient></defs>
     <rect width="600" height="440" fill={`url(#grid-${artId})`}/>
@@ -52,7 +90,7 @@ function App() {
     <a className="skip-link" href="#main" onClick={(event) => scrollToSection(event, 'main')}>Skip to content</a>
     <header className="topbar"><a className="brand" href="#home" onClick={(event) => scrollToSection(event, 'home')} aria-label="Angelo Miguel R. Cua, home">amc<span>✳</span></a><span className="header-note">DATA / SOFTWARE / HARDWARE / INFRASTRUCTURE</span><button className="menu-toggle" aria-expanded={menuOpen} aria-controls="navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? 'Close −' : 'Menu +'}</button><nav id="navigation" className={menuOpen ? 'nav open' : 'nav'} aria-label="Main navigation">{[['work','Work'],['about','About'],['experience','Experience'],['skills','Expertise'],['contact','Contact']].map(([id,label]) => <a key={id} href={`#${id}`} onClick={(event) => { setMenuOpen(false); scrollToSection(event, id) }}>{label}<span>↗</span></a>)}</nav></header>
     <main id="main">
-      <section className="hero" id="home"><div className="hero-top"><p className="eyebrow"><span className="status-dot"/> ANGELO MIGUEL R. CUA</p><p className="edition">PORTFOLIO / 2026</p></div><div className="hero-layout"><div className="hero-copy"><h1>Data-driven systems.<br/><span>Practical solutions.</span></h1><div className="hero-bottom"><p>Computer Engineering graduate & Data Analyst / Data and Support Engineer.<br/>Combining Power BI insight, system support, software development, and hands-on technical execution.</p><a className="round-link" href="#work" onClick={(event) => scrollToSection(event, 'work')} aria-label="Explore selected work">↓</a></div></div><div className="hero-visual"><div className="visual-label"><span>FORM / FUNCTION</span><span>01—02</span></div><TechnicalArt/><div className="visual-footer"><span>FROM CONCEPT TO REALITY</span><span className="cross">+</span></div></div></div><div className="hero-strip"><span>POWER BI & REPORTING</span><span>+</span><span>IT SUPPORT & NETWORKING</span><span>+</span><span>EMBEDDED SYSTEMS</span></div></section>
+      <section className="hero" id="home"><div className="hero-top"><p className="eyebrow"><span className="status-dot"/> ANGELO MIGUEL R. CUA</p><p className="edition">PORTFOLIO / 2026</p></div><div className="hero-layout"><div className="hero-copy"><h1>Data-driven systems.<br/><span>Practical solutions.</span></h1><div className="hero-bottom"><p>Computer Engineering graduate & Data Analyst / Data and Support Engineer.<br/>Combining Power BI insight, system support, software development, and hands-on technical execution.</p><a className="round-link" href="#work" onClick={(event) => scrollToSection(event, 'work')} aria-label="Explore selected work">↓</a></div></div><div className="hero-visual"><div className="visual-label"><span>FORM / FUNCTION</span><span>01—02</span></div><TechnicalArt type="hero"/><div className="visual-footer"><span>FROM CONCEPT TO REALITY</span><span className="cross">+</span></div></div></div><div className="hero-strip"><span>POWER BI & REPORTING</span><span>+</span><span>IT SUPPORT & NETWORKING</span><span>+</span><span>EMBEDDED SYSTEMS</span></div></section>
       <section id="work" className="section"><div className="section-heading"><div><p className="eyebrow">01 / SELECTED WORK</p><h2>Ideas made tangible<span>.</span></h2></div><p>Software, hardware, and the systems<br/>that bring them together.</p></div><div className="project-grid">{projects.map((project, index) => <article className={`project project-${project.type}`} key={project.title}><a className="project-image" href={project.url} target="_blank" rel="noreferrer" aria-label={project.linkLabel || `Open ${project.title} CAD model in Onshape (new tab)`}><TechnicalArt type={project.type}/><span className="project-open">↗</span></a><div className="project-meta"><span>{project.category}</span><span>0{index+1}</span></div><a className="project-title" href={project.url} target="_blank" rel="noreferrer"><h3>{project.title}</h3><span>↗</span></a><p>{project.description}</p><a className="project-action" href={project.url} target="_blank" rel="noreferrer">{project.linkLabel || 'View CAD model'}</a><div className="tags">{project.tags.map(tag => <span key={tag}>{tag}</span>)}</div></article>)}</div></section>
       <section id="about" className="section about"><p className="eyebrow">02 / THE PERSON BEHIND THE WORK</p><div><h2>Curious by nature.<br/><span>Practical by design.</span></h2><div className="about-copy"><p>I'm Angelo, a Computer Engineering graduate and Data Analyst with hands-on experience in IT support, network infrastructure, data reporting, server installation, and embedded systems. I build and maintain technology that turns operational data and real-world systems into useful, reliable solutions.</p><p>My work spans corporate ICT and security installations, Power BI dashboard development, KPI analysis, full-stack web applications, robotics, and IoT. I combine practical implementation with clear communication, from troubleshooting a workstation to integrating a smart access system for a gym environment.</p></div></div></section>
       <section id="experience" className="section experience"><div><p className="eyebrow">03 / EXPERIENCE & EDUCATION</p><h2>Hands-on.<br/>From the start.</h2></div><div className="career-list">
