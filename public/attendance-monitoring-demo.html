@@ -193,7 +193,6 @@
     geoButton.addEventListener('click', requestLocation)
     const openMap = () => { mapModal.classList.add('open'); if (!liveMap) { liveMap = L.map('liveMap').setView([warehouseLocation.latitude, warehouseLocation.longitude], 16); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(liveMap); warehouseMarker = L.marker([warehouseLocation.latitude, warehouseLocation.longitude]).addTo(liveMap).bindPopup('Warehouse office'); geofenceCircle = L.circle([warehouseLocation.latitude, warehouseLocation.longitude], { radius: 100, color: '#23785e', fillColor: '#b9d7c9', fillOpacity: .3 }).addTo(liveMap); window.setTimeout(() => liveMap.invalidateSize(), 100) } requestLocation() }
     document.querySelector('.map-preview').addEventListener('click', openMap)
-    window.addEventListener('load', openMap)
     document.getElementById('mapLocate').addEventListener('click', requestLocation)
     document.getElementById('mapClose').addEventListener('click', () => mapModal.classList.remove('open'))
     mapModal.addEventListener('click', event => { if (event.target === mapModal) mapModal.classList.remove('open') })
