@@ -581,10 +581,10 @@
                 </div>`
             case 3:
                 return e ? `<div class="fi-stack">${fingerprintSummary(e)}<div><button type="button" class="fi-btn fi-btn-primary" data-wizard-action="fingerprint">${h('finger-print', 'hi hi-sm')}Enroll fingerprint</button></div></div>`
-                    : '<p class="fi-muted-text">Save this employee before enrolling a fingerprint.</p>'
+                    : needsEmployee('Save this employee before enrolling a fingerprint.')
             case 4:
                 return e ? `<div class="fi-stack">${faceSummary(e)}<div><button type="button" class="fi-btn fi-btn-primary" data-wizard-action="face">${h('face-smile', 'hi hi-sm')}Register face</button></div></div>`
-                    : '<p class="fi-muted-text">Save this employee before registering a face.</p>'
+                    : needsEmployee('Save this employee before registering a face.')
         }
         return ''
     }
@@ -600,7 +600,7 @@
         return header({ heading, crumbs, actions }) + `<div class="fi-page-content">
             ${creating && e ? `<div class="fi-alert success">Employee ${esc(e.employee_id)} was created. Continue to add RFID, keypad, fingerprint, and face credentials.</div>` : ''}
             <section class="fi-section">
-                <nav class="fi-wizard-steps" aria-label="Registration steps">${STEPS.map((label, i) => `<button type="button" class="fi-wizard-step${i === wizard.step ? ' active' : ''}${i < wizard.step || (i <= wizard.reached && i !== wizard.step && e) ? ' done' : ''}" data-wizard-step="${i}"${i <= wizard.reached ? '' : ' disabled'}${i === wizard.step ? ' aria-current="step"' : ''}>
+                <nav class="fi-wizard-steps" aria-label="Registration steps">${STEPS.map((label, i) => `<button type="button" class="fi-wizard-step${i === wizard.step ? ' active' : ''}${i < wizard.step || (i <= wizard.reached && i !== wizard.step && e) ? ' done' : ''}" data-wizard-step="${i}"${i === wizard.step ? ' aria-current="step"' : ''}>
                     <span class="num">${i < wizard.step || (i <= wizard.reached && i !== wizard.step && e) ? h('check-circle') : pad2(i + 1)}</span><span>${label}</span></button>`).join('')}</nav>
                 <div class="fi-wizard-body">${stepContent()}</div>
                 <div class="fi-wizard-footer">
@@ -612,6 +612,7 @@
         </div>`
     }
     const pad2 = (n) => String(n).padStart(2, '0')
+    const needsEmployee = (text) => `<div class="fi-stack" style="align-items: flex-start"><p class="fi-muted-text">${text}</p><button type="button" class="fi-btn fi-btn-gray" data-wizard-step="0">Go to Employee Information</button></div>`
 
     // Validation mirrors the rules in EmployeeForm.php.
     const validateStep = () => {
@@ -650,8 +651,8 @@
             first_name: d.first_name.trim(), last_name: d.last_name.trim(), middle_name: d.middle_name.trim(),
             date_of_birth: d.date_of_birth, position: d.position.trim(),
         }
-        if (wizard.step >= 1) record.rfid_uid = d.rfid_uid.trim() || null
-        if (wizard.step >= 2 && d.password.trim()) record.keypad_password = d.password.trim()
+        record.rfid_uid = d.rfid_uid.trim() || null
+        if (d.password.trim()) record.keypad_password = d.password.trim()
         if (!record.keypad_password) record.keypad_password = record.employee_id
         const saved = D.saveEmployee(record)
         if (!existing) {
@@ -661,14 +662,36 @@
         return saved
     }
 
+    const goToStep = (target) => {
+        if (target === wizard.step) return
+        const valid = validateStep()
+        // A malformed RFID or keypad entry has to be fixed first; step 1 can be left unfinished.
+        if (!valid && wizard.step !== 0) { render(); return }
+        if (valid && wizard.step <= 2 && (wizard.step === 0 || wizardEmployee())) persistStep()
+        wizard.errors = {}
+        wizard.step = target
+        wizard.reached = Math.max(wizard.reached, target)
+        render()
+    }
+
     const wizardAction = (action) => {
         if (action === 'reveal') { wizard.revealPassword = !wizard.revealPassword; render(); return }
-        if (action === 'back') { wizard.step = Math.max(0, wizard.step - 1); wizard.errors = {}; render(); return }
+        if (action === 'back') { goToStep(Math.max(0, wizard.step - 1)); return }
         if (action === 'fingerprint') { openFingerprintModal(); return }
         if (action === 'face') { openFaceModal(); return }
         if (action === 'next' || action === 'finish') {
             if (!validateStep()) { render(); return }
-            if (wizard.step <= 2) persistStep()
+            if (wizard.step <= 2 && (wizard.step === 0 || wizardEmployee())) persistStep()
+            if (action === 'finish' && !wizardEmployee()) {
+                // Finishing needs the employee information; send the user back there.
+                wizard.step = 0
+                if (!validateStep()) {
+                    notify({ title: 'Employee information required', body: 'Fill in the required fields before creating the employee.', icon: 'exclamation-triangle', color: 'warning' })
+                    render()
+                    return
+                }
+                persistStep()
+            }
             if (action === 'finish') {
                 const e = wizardEmployee()
                 const creating = wizard.routeKey === 'create'
@@ -1043,7 +1066,7 @@
         const wizardButton = e.target.closest('[data-wizard-action]')
         if (wizardButton && wizard) { wizardAction(wizardButton.dataset.wizardAction); return }
         const stepButton = e.target.closest('[data-wizard-step]')
-        if (stepButton && wizard && !stepButton.disabled) { wizard.step = Number(stepButton.dataset.wizardStep); wizard.errors = {}; render(); return }
+        if (stepButton && wizard) { goToStep(Number(stepButton.dataset.wizardStep)); return }
         const key = e.target.closest('[data-keypad]')
         if (key && wizard) {
             const value = key.dataset.keypad
