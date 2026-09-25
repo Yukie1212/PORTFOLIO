@@ -6,6 +6,7 @@
 
     const D = window.TimeclockDemo
     const $ = (id) => document.getElementById(id)
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
     const SIGNED_IN_KEY = 'timeclock-admin-signed-in'
 
     /* ---------------- Helpers ---------------- */
@@ -326,12 +327,12 @@
             actions: () => editLink,
         }),
 
-        employees: () => listPage('Employees', 'New employee', 'employees', {
+        employees: () => listPage('Employees', { label: 'New employee', href: '#/employees/create' }, 'employees', {
             plural: 'employees',
             rows: () => D.employees,
             columns: [
                 col('employee_id', 'Employee ID', (r) => r.employee_id, { searchable: true, sortable: true }),
-                col('fingerprint', 'Fingerprint', (r) => r.has_fingerprint, { html: (r) => `<span class="fi-fingerprint${r.has_fingerprint ? '' : ' none'}" title="${r.has_fingerprint ? 'Fingerprint enrolled' : 'No fingerprint'}">${h('finger-print')}</span>` }),
+                col('fingerprint', 'Fingerprint', (r) => r.fingerprints.length, { html: (r) => `<span class="fi-fingerprint${r.fingerprints.length ? '' : ' none'}" title="${r.fingerprints.length ? `${r.fingerprints.length} fingerprint(s) enrolled` : 'No fingerprint'}">${h('finger-print')}</span>` }),
                 col('rfid_uid', 'RFID UID', (r) => r.rfid_uid, { searchable: true, toggle: 'shown' }),
                 col('first_name', 'First name', (r) => r.first_name, { searchable: true, sortable: true }),
                 col('last_name', 'Last name', (r) => r.last_name, { searchable: true, sortable: true }),
@@ -345,7 +346,7 @@
                 { key: 'department', label: 'Department', options: () => D.departments.map((d) => [d.id, d.name]), test: (r, v) => String(r.department_id) === String(v) },
                 { key: 'position', label: 'Position', options: () => [...new Set(D.employees.map((e) => e.position))].sort().map((p) => [p, p]), test: (r, v) => r.position === v },
             ],
-            actions: (r) => viewLink(`#/employees/${r.employee_id}`) + editLink,
+            actions: (r) => viewLink(`#/employees/${r.employee_id}`) + `<a class="fi-link" href="#/employees/${r.employee_id}/edit">${h('pencil-square', 'hi hi-sm')}Edit</a>`,
             rowUrl: (r) => `#/employees/${r.employee_id}`,
         }),
 
@@ -431,7 +432,8 @@
     }
 
     function listPage(title, newLabel, key, cfg, opts = {}) {
-        return header({ heading: title, crumbs: [[opts.crumb ?? title, `#/${key}`], ['List']], actions: newLabel ? newButton(newLabel) : '' })
+        const action = !newLabel ? '' : typeof newLabel === 'object' ? `<a class="fi-btn fi-btn-primary" href="${newLabel.href}">${esc(newLabel.label)}</a>` : newButton(newLabel)
+        return header({ heading: title, crumbs: [[opts.crumb ?? title, `#/${key}`], ['List']], actions: action })
             + `<div class="fi-page-content">${table(key, cfg)}</div>`
     }
 
@@ -470,7 +472,7 @@
             if (!e) return notFound('employees')
             const records = D.attendances().filter((r) => r.employee_id === e.employee_id)
             const stat = (label, value, desc, descIcon, color, icon) => `<div class="fi-wi-widget fi-wi-stat"><div class="fi-wi-stat-label">${h(icon)}<span>${label}</span></div><div class="fi-wi-stat-value">${value}</div><div class="fi-wi-stat-desc c-${color}"><span>${desc}</span>${h(descIcon)}</div></div>`
-            return header({ heading: `View ${e.employee_id}`, crumbs: [['Employees', '#/employees'], [e.employee_id], ['View']], actions: editButton })
+            return header({ heading: `View ${e.employee_id}`, crumbs: [['Employees', '#/employees'], [e.employee_id], ['View']], actions: `<a class="fi-btn fi-btn-primary" href="#/employees/${e.employee_id}/edit">Edit</a>` })
                 + `<div class="fi-page-content">
                 <div class="fi-wi-stats four">
                     ${stat('Present', records.length, 'Total present records', 'check-circle', 'success', 'calendar-days')}
@@ -478,13 +480,14 @@
                     ${stat('Overtime', records.filter((r) => r.is_overtime).length, 'Total overtime records', 'arrow-trending-up', 'info', 'briefcase')}
                     ${stat('Undertime', records.filter((r) => r.is_undertime).length, 'Total undertime records', 'arrow-trending-down', 'danger', 'calendar')}
                 </div>
-                ${section('Employee information', `<div class="fi-profile" style="margin-bottom: 1.25rem"><div class="fi-avatar">${initials(D.fullName(e))}</div><div><strong>${esc(D.fullName(e))}</strong><span>${esc(e.position)} · ${esc(e.department)}</span></div></div>
+                ${section('Employee information', `<div class="fi-profile" style="margin-bottom: 1.25rem"><div class="fi-avatar">${e.face_photo ? `<img src="${e.face_photo}" alt="">` : initials(D.fullName(e))}</div><div><strong>${esc(D.fullName(e))}</strong><span>${esc(e.position)} · ${esc(e.department)}</span></div></div>
                     ${entries([
-                        ['Employee ID', esc(e.employee_id)], ['RFID UID', esc(e.rfid_uid)], ['Department', esc(e.department)],
+                        ['Employee ID', esc(e.employee_id)], ['RFID UID', orDash(e.rfid_uid)], ['Department', esc(e.department)],
                         ['First name', esc(e.first_name)], ['Middle name', esc(e.middle_name)], ['Last name', esc(e.last_name)],
                         ['Date of birth', esc(fmtLongDate(e.date_of_birth)) + (D.isBirthday(e) ? ` ${badge('Birthday today', 'warning')}` : '')],
                         ['Position', esc(e.position)],
-                        ['Biometrics', `${e.has_fingerprint ? badge('Fingerprint enrolled', 'success', 'finger-print') : badge('No fingerprint', 'gray', 'finger-print')} ${badge('Face registered', 'success', 'face-smile')}`],
+                        ['RFID / keypad', `${e.rfid_uid ? badge('RFID card', 'success', 'identification') : badge('No RFID card', 'gray', 'identification')} ${badge('Keypad password', 'success', 'cursor-arrow-rays')}`],
+                        ['Biometrics', `${e.fingerprints.length ? badge(`${e.fingerprints.length} fingerprint${e.fingerprints.length === 1 ? '' : 's'}`, 'success', 'finger-print') : badge('No fingerprint', 'gray', 'finger-print')} ${e.has_face ? badge('Face registered', 'success', 'face-smile') : badge('No face', 'gray', 'face-smile')}`],
                     ], 'cols-3')}`)}
                 ${table(`employee-${e.employee_id}`, {
                     heading: 'Attendances', plural: 'attendances',
@@ -510,6 +513,401 @@
 
     const notFound = (resource) => header({ heading: 'Not found', crumbs: [[resource[0].toUpperCase() + resource.slice(1), `#/${resource}`]] })
         + `<div class="fi-page-content">${section('404', '<p>This record does not exist in the demo data.</p>')}</div>`
+
+    /* ---------------- Employee registration (EmployeeForm wizard) ---------------- */
+    const FINGERS = ['Left Thumb', 'Left Index', 'Left Middle', 'Left Ring', 'Left Little', 'Right Thumb', 'Right Index', 'Right Middle', 'Right Ring', 'Right Little']
+        .map((label, i) => ({ index: i + 1, label }))
+    const STEPS = ['Employee Information', 'RFID', 'Keypad', 'Fingerprint', 'Facial Recognition']
+    let wizard = null
+
+    const startWizard = (routeKey, employee) => {
+        wizard = {
+            routeKey,
+            step: 0,
+            reached: employee ? STEPS.length - 1 : 0,
+            employeeId: employee?.employee_id ?? null,
+            revealPassword: false,
+            errors: {},
+            data: employee
+                ? { department_id: String(employee.department_id), first_name: employee.first_name, last_name: employee.last_name, middle_name: employee.middle_name ?? '', date_of_birth: employee.date_of_birth ?? '', position: employee.position, rfid_uid: employee.rfid_uid ?? '', password: '' }
+                : { department_id: '', first_name: '', last_name: '', middle_name: '', date_of_birth: '', position: '', rfid_uid: '', password: '' },
+        }
+    }
+    const wizardEmployee = () => (wizard?.employeeId ? D.findEmployee(wizard.employeeId) : null)
+
+    const field = (name, label, { type = 'text', required = false, helper = '', attrs = '' } = {}) => {
+        const error = wizard.errors[name]
+        return `<div class="fi-field${error ? ' has-error' : ''}">
+            <label for="w-${name}">${esc(label)}${required ? '<sup>*</sup>' : ''}</label>
+            <input class="fi-input" id="w-${name}" type="${type}" data-wizard="${name}" value="${esc(wizard.data[name])}" ${attrs}${error ? ` aria-invalid="true" aria-describedby="w-${name}-error"` : ''}>
+            ${error ? `<p class="fi-field-error" id="w-${name}-error">${esc(error)}</p>` : ''}
+            ${helper ? `<p class="fi-hint">${esc(helper)}</p>` : ''}
+        </div>`
+    }
+
+    const fingerprintSummary = (e) => `<div class="fi-summary"><p class="fi-summary-label">Registered fingerprint</p>
+        ${e.fingerprints?.length
+            ? `<div class="fi-chips">${e.fingerprints.map((f) => `<span class="fi-chip">${esc(f.label)} · ${esc(fmtDateTimeShort(f.enrolled_at))}</span>`).join('')}</div>`
+            : '<p style="margin-top: 0.5rem; font-weight: 500; color: #0f172a">No fingerprint registered yet.</p>'}</div>`
+    const faceSummary = (e) => `<div class="fi-summary"><p class="fi-summary-label">Registered face</p>
+        <div class="fi-profile" style="margin-top: 0.75rem">${e.face_photo ? `<img class="fi-face-thumb" src="${e.face_photo}" alt="${esc(D.fullName(e))}">` : ''}
+        <div><strong style="font-size: 0.875rem">${esc(D.fullName(e))}</strong><span style="font-size: 0.75rem">${e.has_face ? 'Registered face exists' : 'No face registered yet'}</span></div></div></div>`
+
+    const stepContent = () => {
+        const e = wizardEmployee()
+        switch (wizard.step) {
+            case 0:
+                return `<div class="fi-grid cols-2">
+                    <div class="fi-field${wizard.errors.department_id ? ' has-error' : ''}"><label for="w-department_id">Department<sup>*</sup></label>
+                        <select class="fi-input" id="w-department_id" data-wizard="department_id"><option value="">Select an option</option>${D.departments.map((d) => `<option value="${d.id}"${String(d.id) === wizard.data.department_id ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>
+                        ${wizard.errors.department_id ? `<p class="fi-field-error">${esc(wizard.errors.department_id)}</p>` : ''}</div>
+                    ${field('first_name', 'First name', { required: true })}
+                    ${field('last_name', 'Last name', { required: true })}
+                    ${field('middle_name', 'Middle name')}
+                    ${field('date_of_birth', 'Date of birth', { type: 'date', required: true })}
+                    ${field('position', 'Position', { required: true })}
+                </div>`
+            case 1:
+                return `<div style="max-width: 28rem">${field('rfid_uid', 'RFID UIDs', { helper: 'Used for RFID attendance and timeclock unlock.', attrs: 'inputmode="numeric" autocomplete="off"' })}</div>`
+            case 2:
+                return `<div class="fi-stack" style="max-width: 28rem">
+                    <div class="fi-field${wizard.errors.password ? ' has-error' : ''}"><label for="w-password">Keypad Password</label>
+                        <div class="fi-input-group"><input class="fi-input" id="w-password" type="${wizard.revealPassword ? 'text' : 'password'}" inputmode="numeric" autocomplete="new-password" data-wizard="password" value="${esc(wizard.data.password)}">
+                        <button type="button" data-wizard-action="reveal" aria-label="${wizard.revealPassword ? 'Hide' : 'Show'} password">${h(wizard.revealPassword ? 'eye' : 'eye')}</button></div>
+                        ${wizard.errors.password ? `<p class="fi-field-error">${esc(wizard.errors.password)}</p>` : ''}
+                        <p class="fi-hint">Used for manual keypad attendance. Leave blank to keep the current password.${e ? ` Current password in this demo: ${esc(e.keypad_password)}.` : ''}</p></div>
+                    <div class="fi-keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button type="button" data-keypad="${d}">${d}</button>`).join('')}
+                        <button type="button" class="util" data-keypad="clear">Clear</button><button type="button" data-keypad="0">0</button><button type="button" class="util" data-keypad="delete">Delete</button></div>
+                </div>`
+            case 3:
+                return e ? `<div class="fi-stack">${fingerprintSummary(e)}<div><button type="button" class="fi-btn fi-btn-primary" data-wizard-action="fingerprint">${h('finger-print', 'hi hi-sm')}Enroll fingerprint</button></div></div>`
+                    : '<p class="fi-muted-text">Save this employee before enrolling a fingerprint.</p>'
+            case 4:
+                return e ? `<div class="fi-stack">${faceSummary(e)}<div><button type="button" class="fi-btn fi-btn-primary" data-wizard-action="face">${h('face-smile', 'hi hi-sm')}Register face</button></div></div>`
+                    : '<p class="fi-muted-text">Save this employee before registering a face.</p>'
+        }
+        return ''
+    }
+
+    const registrationPage = (routeKey, employee) => {
+        if (!wizard || wizard.routeKey !== routeKey) startWizard(routeKey, employee)
+        const e = wizardEmployee()
+        const creating = !employee
+        const last = wizard.step === STEPS.length - 1
+        const heading = creating ? 'Create Employee' : `Edit ${employee.employee_id}`
+        const crumbs = creating ? [['Employees', '#/employees'], ['Create']] : [['Employees', '#/employees'], [employee.employee_id, `#/employees/${employee.employee_id}`], ['Edit']]
+        const actions = creating ? '' : `<a class="fi-btn fi-btn-gray" href="#/employees/${employee.employee_id}">View</a>`
+        return header({ heading, crumbs, actions }) + `<div class="fi-page-content">
+            ${creating && e ? `<div class="fi-alert success">Employee ${esc(e.employee_id)} was created. Continue to add RFID, keypad, fingerprint, and face credentials.</div>` : ''}
+            <section class="fi-section">
+                <nav class="fi-wizard-steps" aria-label="Registration steps">${STEPS.map((label, i) => `<button type="button" class="fi-wizard-step${i === wizard.step ? ' active' : ''}${i < wizard.step || (i <= wizard.reached && i !== wizard.step && e) ? ' done' : ''}" data-wizard-step="${i}"${i <= wizard.reached ? '' : ' disabled'}${i === wizard.step ? ' aria-current="step"' : ''}>
+                    <span class="num">${i < wizard.step || (i <= wizard.reached && i !== wizard.step && e) ? h('check-circle') : pad2(i + 1)}</span><span>${label}</span></button>`).join('')}</nav>
+                <div class="fi-wizard-body">${stepContent()}</div>
+                <div class="fi-wizard-footer">
+                    ${wizard.step > 0 ? '<button type="button" class="fi-btn fi-btn-gray" data-wizard-action="back">Back</button>' : ''}
+                    ${last ? `<button type="button" class="fi-btn fi-btn-primary" data-wizard-action="finish">${creating ? 'Create' : 'Save changes'}</button>` : '<button type="button" class="fi-btn fi-btn-primary" data-wizard-action="next">Next</button>'}
+                    <a class="fi-btn fi-btn-gray" href="${e ? `#/employees/${e.employee_id}` : '#/employees'}">Cancel</a>
+                </div>
+            </section>
+        </div>`
+    }
+    const pad2 = (n) => String(n).padStart(2, '0')
+
+    // Validation mirrors the rules in EmployeeForm.php.
+    const validateStep = () => {
+        const d = wizard.data
+        const errors = {}
+        if (wizard.step === 0) {
+            if (!d.department_id) errors.department_id = 'The department field is required.'
+            for (const [key, label] of [['first_name', 'first name'], ['last_name', 'last name'], ['date_of_birth', 'date of birth'], ['position', 'position']]) {
+                if (!String(d[key]).trim()) errors[key] = `The ${label} field is required.`
+            }
+        }
+        if (wizard.step === 1 && d.rfid_uid.trim()) {
+            if (!/^\d+$/.test(d.rfid_uid.trim()) || Number(d.rfid_uid) < 1) errors.rfid_uid = 'The rfid uid field must be a number.'
+            else if (D.employees.some((x) => x.rfid_uid === d.rfid_uid.trim() && x.employee_id !== wizard.employeeId)) errors.rfid_uid = 'The rfid uid has already been taken.'
+        }
+        if (wizard.step === 2 && d.password.trim()) {
+            if (!/^\d+$/.test(d.password.trim())) errors.password = 'The keypad password field must be a number.'
+            else if (D.employees.some((x) => x.keypad_password === d.password.trim() && x.employee_id !== wizard.employeeId)) errors.password = 'This keypad password is already used by another employee.'
+        }
+        wizard.errors = errors
+        return Object.keys(errors).length === 0
+    }
+
+    // Like createFromEmployeeInformationStep(), the record is saved as soon as
+    // step 1 passes, so fingerprint and face enrollment have an employee to attach to.
+    const persistStep = () => {
+        const d = wizard.data
+        const existing = wizardEmployee()
+        const base = existing ?? {
+            employee_id: D.nextEmployeeId(), rfid_uid: '', keypad_password: '', fingerprints: [], has_face: false, face_photo: null,
+            created_at: new Date(), registered_in_demo: true,
+        }
+        const record = {
+            ...base,
+            department_id: Number(d.department_id),
+            first_name: d.first_name.trim(), last_name: d.last_name.trim(), middle_name: d.middle_name.trim(),
+            date_of_birth: d.date_of_birth, position: d.position.trim(),
+        }
+        if (wizard.step >= 1) record.rfid_uid = d.rfid_uid.trim() || null
+        if (wizard.step >= 2 && d.password.trim()) record.keypad_password = d.password.trim()
+        if (!record.keypad_password) record.keypad_password = record.employee_id
+        const saved = D.saveEmployee(record)
+        if (!existing) {
+            wizard.employeeId = saved.employee_id
+            notify({ title: 'Created', body: `${D.fullName(saved)} was saved as employee ${saved.employee_id}.` })
+        }
+        return saved
+    }
+
+    const wizardAction = (action) => {
+        if (action === 'reveal') { wizard.revealPassword = !wizard.revealPassword; render(); return }
+        if (action === 'back') { wizard.step = Math.max(0, wizard.step - 1); wizard.errors = {}; render(); return }
+        if (action === 'fingerprint') { openFingerprintModal(); return }
+        if (action === 'face') { openFaceModal(); return }
+        if (action === 'next' || action === 'finish') {
+            if (!validateStep()) { render(); return }
+            if (wizard.step <= 2) persistStep()
+            if (action === 'finish') {
+                const e = wizardEmployee()
+                const creating = wizard.routeKey === 'create'
+                wizard = null
+                notify({ title: creating ? 'Created' : 'Saved', body: creating ? 'Registration complete.' : 'Employee changes were saved.' })
+                location.hash = `#/employees/${e.employee_id}`
+                return
+            }
+            wizard.step += 1
+            wizard.reached = Math.max(wizard.reached, wizard.step)
+            render()
+        }
+    }
+
+    /* ---------- Action modals ---------- */
+    const modalRoot = () => $('modalRoot')
+    const openModal = (title, body, onClose) => {
+        modalRoot().innerHTML = `<div class="fi-modal" id="actionModal"><div class="fi-modal-window lg" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+            <div class="fi-modal-head"><h2 id="actionModalTitle">${esc(title)}</h2><button type="button" class="fi-icon-btn" data-modal-close aria-label="Close">${h('x-mark')}</button></div>
+            <div class="fi-modal-body" id="actionModalBody">${body}</div>
+            <div class="fi-modal-foot"><button type="button" class="fi-btn fi-btn-gray" data-modal-close>Close</button></div>
+        </div></div>`
+        modalRoot().onclose = onClose
+        modalRoot().querySelector('[data-modal-close]').focus()
+    }
+    const closeModal = () => {
+        const onClose = modalRoot().onclose
+        modalRoot().onclose = null
+        modalRoot().innerHTML = ''
+        onClose?.()
+        render()
+    }
+    const employeeHeader = (e) => `<div class="fi-summary"><strong style="color: #0f172a">${esc(D.fullName(e))}</strong><p class="fi-muted-text" style="margin-top: 0.25rem">${esc(e.employee_id)} · ${esc(e.position)}</p></div>`
+
+    /* Fingerprint enrollment (filament-fingerprint-enrollment.js, ZKTeco bridge simulated) */
+    let fp = null
+    const openFingerprintModal = () => {
+        const e = wizardEmployee()
+        fp = { selected: null, busy: false, scans: 0, message: '', success: false, removing: null }
+        openModal(`Enroll fingerprint for ${D.fullName(e)}`, '', () => { fp = null })
+        renderFingerprint()
+    }
+    const renderFingerprint = () => {
+        const body = $('actionModalBody')
+        if (!body || !fp) return
+        const e = wizardEmployee()
+        const registered = e.fingerprints ?? []
+        const limit = registered.length >= 3
+        const isRegistered = (f) => registered.some((t) => t.finger_index === f.index)
+        body.innerHTML = `<div class="fi-stack">
+            ${employeeHeader(e)}
+            <div class="fi-summary"><div class="row"><p class="fi-summary-label">Registered fingerprint</p><span class="fi-pill">${registered.length}/3 registered</span></div>
+                ${registered.length ? `<div class="fi-chips">${registered.map((t) => `<span class="fi-chip">${esc(t.label)} · ${esc(fmtDateTimeShort(t.enrolled_at))}<button type="button" data-fp-remove="${t.finger_index}"${fp.busy ? ' disabled' : ''}>${fp.removing === t.finger_index ? 'Removing...' : 'Remove'}</button></span>`).join('')}</div>`
+                    : '<p style="margin-top: 0.5rem; font-weight: 500; color: #0f172a">No fingerprint registered yet.</p>'}</div>
+            ${fp.message ? `<div class="fi-alert ${fp.success ? 'success' : 'warning'}" role="status">${esc(fp.message)}</div>` : ''}
+            ${limit ? '<div class="fi-alert warning">This employee already has 3 registered fingers. Remove one before registering another.</div>' : ''}
+            <div class="fi-stack" style="gap: 0.75rem"><p style="font-weight: 600; color: #0f172a">Select finger</p>
+                <div class="fi-fingers">${FINGERS.map((f) => `<button type="button" class="fi-finger${fp.selected === f.index ? ' selected' : isRegistered(f) ? ' registered' : ''}" data-fp-finger="${f.index}"${fp.busy || isRegistered(f) || limit ? ' disabled' : ''}>${f.label}${isRegistered(f) ? '<small>Registered</small>' : fp.selected === f.index ? '<small>Selected</small>' : ''}</button>`).join('')}</div></div>
+            ${fp.busy || fp.scans ? `<div class="fi-scan-progress" aria-label="Scan ${fp.scans} of 3">${[1, 2, 3].map((n) => `<span class="${n <= fp.scans ? 'on' : ''}"></span>`).join('')}</div>` : ''}
+            <div><button type="button" class="fi-btn fi-btn-primary" data-fp-scan${fp.busy || !fp.selected || limit ? ' disabled' : ''}>${fp.busy ? 'Reading fingerprint...' : 'Scan fingerprint'}</button></div>
+        </div>`
+    }
+    const fingerLabel = (index) => FINGERS.find((f) => f.index === index)?.label
+    const scanFingerprint = async () => {
+        const e = wizardEmployee()
+        const label = fingerLabel(fp.selected)
+        Object.assign(fp, { busy: true, scans: 0, success: false, message: `Opening the fingerprint scanner. Scan ${label} 3 times when it is ready.` })
+        renderFingerprint()
+        await wait(1200)
+        for (let n = 1; n <= 3; n++) {
+            if (!fp) return
+            fp.message = n < 3 ? `Place ${label} on the scanner (${n} of 3)...` : `Place ${label} on the scanner one last time (3 of 3)...`
+            renderFingerprint()
+            await wait(1000)
+            if (!fp) return
+            fp.scans = n
+            renderFingerprint()
+            await wait(350)
+        }
+        if (!fp) return
+        const saved = D.saveEmployee({ ...e, fingerprints: [...(e.fingerprints ?? []), { finger_index: fp.selected, label, enrolled_at: new Date().toISOString() }] })
+        Object.assign(fp, { busy: false, selected: null, success: true, message: 'Fingerprint successfully Registered!' })
+        wizard.employeeId = saved.employee_id
+        renderFingerprint()
+    }
+    const removeFinger = async (index) => {
+        const e = wizardEmployee()
+        Object.assign(fp, { busy: true, removing: index, message: '' })
+        renderFingerprint()
+        await wait(700)
+        if (!fp) return
+        D.saveEmployee({ ...e, fingerprints: e.fingerprints.filter((t) => t.finger_index !== index) })
+        Object.assign(fp, { busy: false, removing: null, success: true, message: `${fingerLabel(index)} was removed.` })
+        renderFingerprint()
+    }
+
+    /* Face registration (filament-face-registration.js, face-api.js detection simulated) */
+    let face = null
+    const openFaceModal = () => {
+        const e = wizardEmployee()
+        face = { stream: null, ready: false, status: 'Start the camera and center one face.', faces: 0, clear: false, countdown: 0, reviewing: false, preview: null, message: '', success: false, saving: false, run: 0 }
+        openModal(`Register face for ${D.fullName(e)}`, `<div class="fi-stack">
+            ${employeeHeader(e)}
+            <div id="faceSummary">${faceSummary(e)}</div>
+            <div class="fi-face-grid">
+                <div class="fi-face-stage">
+                    <div class="fi-face-cover" id="faceCover"></div>
+                    <video id="faceVideo" autoplay muted playsinline></video>
+                    <div class="fi-face-blur" id="faceBlur"></div>
+                    <div class="fi-face-oval" id="faceOval"></div>
+                    <div class="fi-face-count" id="faceCount" hidden><b></b><span>Hold still</span></div>
+                    <div class="fi-face-review" id="faceReview" hidden>
+                        <header><div><small>Captured</small><strong>Review this photo before saving</strong></div><span class="fi-pill">Clear face</span></header>
+                        <div class="img"><img id="facePreview" alt="Captured face preview"></div>
+                        <footer>Save this image if the face is clear, centered, and unobstructed.</footer>
+                    </div>
+                </div>
+                <div class="fi-stack">
+                    <div class="fi-summary"><p class="fi-summary-label">Status</p><p style="margin-top: 0.25rem; font-weight: 500; color: #0f172a" id="faceStatus" role="status"></p>
+                        <p style="margin-top: 0.5rem; font-size: 0.75rem; font-weight: 500; color: #d97706">Remove eyeglasses, shades, masks, or any object covering the face before saving.</p></div>
+                    <div class="fi-face-stats"><div><b id="faceFaces">0</b><span>Faces</span></div><div><b id="faceClear">Check</b><span>Face</span></div></div>
+                    <div id="faceMessage"></div>
+                    <div class="fi-alert success" id="faceReady" hidden><strong>Ready to save?</strong><p style="margin-top: 0.25rem; font-size: 0.75rem">Choose retake if the photo is blurry, cropped badly, or the employee is not looking straight.</p></div>
+                    <div class="fi-grid cols-2" id="faceButtons" hidden style="gap: 0.75rem">
+                        <button type="button" class="fi-btn fi-btn-gray" data-face="retake">Retake photo</button>
+                        <button type="button" class="fi-btn fi-btn-primary" data-face="save">Save this photo</button>
+                    </div>
+                </div>
+            </div>
+        </div>`, () => {
+            face?.stream?.getTracks().forEach((t) => t.stop())
+            face = null
+        })
+        updateFace()
+        startFaceCamera()
+    }
+    const updateFace = () => {
+        if (!face || !$('faceStatus')) return
+        $('faceStatus').textContent = face.status
+        $('faceCover').hidden = face.ready
+        $('faceCover').textContent = face.status
+        $('faceVideo').classList.toggle('ready', face.ready && !face.reviewing)
+        $('faceBlur').hidden = face.reviewing
+        $('faceOval').hidden = face.reviewing
+        $('faceOval').className = `fi-face-oval${face.clear ? ' clear' : face.faces ? ' found' : ''}`
+        $('faceCount').hidden = !(face.countdown > 0 && !face.reviewing)
+        $('faceCount').querySelector('b').textContent = face.countdown
+        $('faceReview').hidden = !face.reviewing
+        if (face.preview) $('facePreview').src = face.preview
+        $('faceFaces').textContent = face.faces
+        $('faceClear').textContent = face.clear ? 'Clear' : 'Check'
+        $('faceClear').className = face.clear ? 'ok' : ''
+        $('faceMessage').innerHTML = face.message ? `<div class="fi-alert ${face.success ? 'success' : 'warning'}">${esc(face.message)}</div>` : ''
+        $('faceReady').hidden = !face.reviewing || face.success
+        $('faceButtons').hidden = !face.reviewing || face.success
+        const save = document.querySelector('[data-face="save"]')
+        if (save) { save.disabled = face.saving; save.textContent = face.saving ? 'Saving...' : 'Save this photo' }
+        const retake = document.querySelector('[data-face="retake"]')
+        if (retake) retake.disabled = face.saving
+    }
+    const startFaceCamera = async () => {
+        try {
+            if (!navigator.mediaDevices?.getUserMedia) throw new Error('unavailable')
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 960 }, height: { ideal: 540 }, facingMode: 'user' }, audio: false })
+            if (!face) { stream.getTracks().forEach((t) => t.stop()); return }
+            face.stream = stream
+            $('faceVideo').srcObject = stream
+            await $('faceVideo').play().catch(() => null)
+        } catch {
+            if (!face) return
+            face.cameraless = true
+        }
+        if (!face) return
+        face.ready = true
+        runFaceCapture()
+    }
+    const runFaceCapture = async () => {
+        const run = ++face.run
+        const alive = () => face && face.run === run
+        Object.assign(face, { faces: 0, clear: false, countdown: 0, reviewing: false, preview: null, message: '', success: false,
+            status: face.cameraless ? 'Camera unavailable. Using a sample photo for this demo.' : 'Center your face inside the oval.' })
+        updateFace()
+        await wait(1300)
+        if (!alive()) return
+        Object.assign(face, { faces: 1, status: 'Center your face inside the oval.' })
+        updateFace()
+        await wait(1200)
+        if (!alive()) return
+        Object.assign(face, { clear: true, status: 'Face clear. Capturing for review...' })
+        updateFace()
+        await wait(600)
+        for (let s = 3; s >= 1; s--) {
+            if (!alive()) return
+            Object.assign(face, { countdown: s, status: `Hold still. Capturing in ${s}...` })
+            updateFace()
+            await wait(900)
+        }
+        if (!alive()) return
+        Object.assign(face, { countdown: 0, reviewing: true, preview: captureFace(), status: 'Review the captured face image.', message: 'Save this image or retake if it is not clear.' })
+        updateFace()
+    }
+    // Crops the oval area of the live frame; without a camera, draws a placeholder portrait.
+    const captureFace = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 240
+        canvas.height = 300
+        const ctx = canvas.getContext('2d')
+        const video = $('faceVideo')
+        if (!face.cameraless && video?.videoWidth) {
+            const sh = video.videoHeight * 0.85
+            const sw = sh * 0.8
+            ctx.drawImage(video, (video.videoWidth - sw) / 2, (video.videoHeight - sh) / 2, sw, sh, 0, 0, canvas.width, canvas.height)
+        } else {
+            const e = wizardEmployee()
+            ctx.fillStyle = '#abd1c6'
+            ctx.fillRect(0, 0, 240, 300)
+            ctx.fillStyle = '#004643'
+            ctx.beginPath(); ctx.arc(120, 120, 58, 0, Math.PI * 2); ctx.fill()
+            ctx.beginPath(); ctx.ellipse(120, 290, 100, 90, 0, Math.PI, 0); ctx.fill()
+            ctx.fillStyle = '#fffffe'
+            ctx.font = 'bold 44px "Mona Sans", sans-serif'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(initials(D.fullName(e)), 120, 122)
+        }
+        return canvas.toDataURL('image/jpeg', 0.72)
+    }
+    const saveFace = async () => {
+        const e = wizardEmployee()
+        Object.assign(face, { saving: true, message: '', status: 'Saving face registration...' })
+        updateFace()
+        await wait(900)
+        if (!face) return
+        D.saveEmployee({ ...e, has_face: true, face_photo: face.preview })
+        Object.assign(face, { saving: false, success: true, message: 'Face registered successfully.', status: 'Face saved.' })
+        face.stream?.getTracks().forEach((t) => t.stop())
+        $('faceSummary').innerHTML = faceSummary(wizardEmployee())
+        updateFace()
+    }
 
     /* ---------------- Sparkline + chart ---------------- */
     function sparkline(values, color) {
@@ -579,7 +977,7 @@
         $('app').hidden = !signedIn
         if (!signedIn) return
 
-        const [resource = '', id] = currentRoute()
+        const [resource = '', id, sub] = currentRoute()
         renderNav(resource)
         const focused = keepFocus ? document.activeElement : null
         const focusSel = focused?.dataset?.act === 'search' ? `[data-ta="${focused.dataset.ta}"][data-act="search"]` : null
@@ -587,6 +985,8 @@
 
         let html
         if (resource === '') html = pages.dashboard()
+        else if (resource === 'employees' && id === 'create') html = registrationPage('create', null)
+        else if (resource === 'employees' && sub === 'edit' && D.findEmployee(id)) html = registrationPage(`edit-${id}`, D.findEmployee(id))
         else if (id && detailPages[resource]) html = detailPages[resource](id)
         else if (pages[resource]) html = pages[resource]()
         else html = notFound('dashboard')
@@ -612,6 +1012,7 @@
     const main = $('main')
     main.addEventListener('input', (e) => {
         const t = e.target
+        if (t.dataset.wizard && wizard) { wizard.data[t.dataset.wizard] = t.value; return }
         if (t.dataset.act === 'search') {
             const st = tables[t.dataset.ta]
             st.search = t.value
@@ -621,6 +1022,7 @@
     })
     main.addEventListener('change', (e) => {
         const t = e.target
+        if (t.dataset.wizard && wizard) { wizard.data[t.dataset.wizard] = t.value; return }
         if (t.id === 'dashDate') {
             dashboardDate = t.value || D.dateKey(D.today)
             render()
@@ -638,6 +1040,17 @@
     })
     main.addEventListener('click', (e) => {
         if (e.target.closest('[data-readonly]')) { readOnly(); return }
+        const wizardButton = e.target.closest('[data-wizard-action]')
+        if (wizardButton && wizard) { wizardAction(wizardButton.dataset.wizardAction); return }
+        const stepButton = e.target.closest('[data-wizard-step]')
+        if (stepButton && wizard && !stepButton.disabled) { wizard.step = Number(stepButton.dataset.wizardStep); wizard.errors = {}; render(); return }
+        const key = e.target.closest('[data-keypad]')
+        if (key && wizard) {
+            const value = key.dataset.keypad
+            wizard.data.password = value === 'clear' ? '' : value === 'delete' ? wizard.data.password.slice(0, -1) : wizard.data.password + value
+            $('w-password').value = wizard.data.password
+            return
+        }
         const btn = e.target.closest('button[data-ta]')
         if (btn) {
             const st = tables[btn.dataset.ta]
@@ -672,11 +1085,26 @@
     })
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return
+        if ($('actionModal')) { closeModal(); return }
         for (const st of Object.values(tables)) st.panel = null
         $('userMenuPanel').hidden = true
         $('searchResults').hidden = true
         document.body.classList.remove('sidebar-open')
         if (storage.get(SIGNED_IN_KEY) === '1') render()
+    })
+
+    $('modalRoot').addEventListener('click', (e) => {
+        if (e.target.closest('[data-modal-close]') || e.target.id === 'actionModal') { closeModal(); return }
+        const finger = e.target.closest('[data-fp-finger]')
+        if (finger && fp && !finger.disabled) { fp.selected = Number(finger.dataset.fpFinger); fp.message = ''; fp.scans = 0; renderFingerprint(); return }
+        if (e.target.closest('[data-fp-scan]') && fp && !fp.busy) { scanFingerprint(); return }
+        const remove = e.target.closest('[data-fp-remove]')
+        if (remove && fp && !fp.busy) { removeFinger(Number(remove.dataset.fpRemove)); return }
+        const faceButton = e.target.closest('[data-face]')
+        if (faceButton && face && !face.saving) {
+            if (faceButton.dataset.face === 'retake') runFaceCapture()
+            else saveFace()
+        }
     })
 
     $('loginForm').addEventListener('submit', (e) => {
@@ -712,6 +1140,7 @@
 
     // Clock-ins made on the TimeClock demo in another tab show up live.
     window.addEventListener('storage', (e) => {
+        if (e.key === D.EMPLOYEES_KEY) { D.refreshEmployees(); render(); return }
         if (e.key !== D.STORAGE_KEY) return
         try {
             const log = JSON.parse(e.newValue || '[]')

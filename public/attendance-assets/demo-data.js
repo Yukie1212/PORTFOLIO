@@ -52,6 +52,7 @@ window.TimeclockDemo = (() => {
         id: index + 1,
         employee_id,
         rfid_uid: `00123456${pad(78 + index)}`,
+        keypad_password: employee_id,
         first_name,
         last_name,
         middle_name,
@@ -59,13 +60,55 @@ window.TimeclockDemo = (() => {
         position,
         department_id,
         department: departments.find((d) => d.id === department_id).name,
-        has_fingerprint: index % 4 !== 3,
+        fingerprints: index % 4 === 3 ? [] : [{ finger_index: 7, label: 'Right Index', enrolled_at: addDays(today, -190 + index * 3).toISOString() }],
         has_face: true,
+        face_photo: null,
         created_at: addDays(today, -200 + index * 3),
     }))
+    const seededEmployees = employees.map((e) => ({ ...e, fingerprints: [...e.fingerprints] }))
     const fullName = (e) => `${e.first_name} ${e.last_name}`
-    const isBirthday = (e) => e.date_of_birth.slice(5) === birthdayToday.slice(5)
+    const isBirthday = (e) => Boolean(e.date_of_birth) && e.date_of_birth.slice(5) === birthdayToday.slice(5)
     const findEmployee = (identifier) => employees.find((e) => e.employee_id === identifier || e.rfid_uid === identifier)
+    // Keypad attendance checks the employee's keypad password; RFID checks the card UID.
+    const findByCredential = (value, method) => employees.find((e) => (method === 'rfid' ? e.rfid_uid === value : e.keypad_password === value))
+
+    /* ---------- Employees registered or edited in the admin demo ---------- */
+    const EMPLOYEES_KEY = 'timeclock-demo-employees-v1'
+    const memoryEmployees = {}
+    const readEmployeeChanges = () => {
+        try {
+            const data = JSON.parse(localStorage.getItem(EMPLOYEES_KEY) || '{}')
+            return data && typeof data === 'object' ? data : {}
+        } catch {
+            return { ...memoryEmployees }
+        }
+    }
+    const refreshEmployees = () => {
+        const changes = readEmployeeChanges()
+        const merged = seededEmployees.map((e) => ({ ...e, fingerprints: [...e.fingerprints] }))
+        for (const saved of Object.values(changes)) {
+            const record = { ...saved, created_at: new Date(saved.created_at), department: departments.find((d) => d.id === Number(saved.department_id))?.name ?? '' }
+            const index = merged.findIndex((e) => e.employee_id === record.employee_id)
+            if (index >= 0) merged[index] = record
+            else merged.push(record)
+        }
+        employees.splice(0, employees.length, ...merged)
+    }
+    const saveEmployee = (employee) => {
+        const changes = readEmployeeChanges()
+        const record = { ...employee, department_id: Number(employee.department_id), created_at: new Date(employee.created_at ?? Date.now()).toISOString() }
+        delete record.department
+        changes[record.employee_id] = record
+        try {
+            localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(changes))
+        } catch {
+            memoryEmployees[record.employee_id] = record
+        }
+        refreshEmployees()
+        return findEmployee(record.employee_id)
+    }
+    const nextEmployeeId = () => String(Math.max(...employees.map((e) => Number(e.employee_id) || 0)) + 1)
+    refreshEmployees()
 
     /* ---------- Seeded attendance history (last 7 days) ---------- */
     const methods = ['rfid', 'rfid', 'fingerprint', 'face', 'keypad']
@@ -75,7 +118,7 @@ window.TimeclockDemo = (() => {
     for (let offset = -13; offset <= 0; offset++) {
         const day = addDays(today, offset)
         if (day.getDay() === 0) continue // no Sunday shift
-        for (const employee of employees) {
+        for (const employee of seededEmployees) {
             const isToday = offset === 0
             if (isToday ? !presentToday.has(employee.employee_id) : random() > 0.88) continue
             const inMinutes = between(7 * 60 + 25, 8 * 60 + 20)
@@ -133,7 +176,12 @@ window.TimeclockDemo = (() => {
     const memoryLog = []
     const resetLog = () => {
         memoryLog.length = 0
-        try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+        for (const key of Object.keys(memoryEmployees)) delete memoryEmployees[key]
+        try {
+            localStorage.removeItem(STORAGE_KEY)
+            localStorage.removeItem(EMPLOYEES_KEY)
+        } catch { /* ignore */ }
+        refreshEmployees()
     }
 
     const attendances = () => {
@@ -204,6 +252,7 @@ window.TimeclockDemo = (() => {
 
     return {
         STORAGE_KEY,
+        EMPLOYEES_KEY,
         today,
         addDays,
         dateKey,
@@ -212,6 +261,10 @@ window.TimeclockDemo = (() => {
         fullName,
         isBirthday,
         findEmployee,
+        findByCredential,
+        saveEmployee,
+        refreshEmployees,
+        nextEmployeeId,
         attendances,
         presentOn,
         record,

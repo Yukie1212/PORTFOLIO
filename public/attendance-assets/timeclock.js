@@ -276,10 +276,10 @@
     const startProcessing = (method, message) => { state.processingMethod = method; setStatus(message) }
 
     /* Simulated POST /attendance/verify-employee */
-    const verifyEmployeeIdentifier = async (identifier) => {
+    const verifyEmployeeIdentifier = async (identifier, method) => {
         setStatus('Checking employee...')
         await wait(600)
-        const employee = demo.findEmployee(identifier)
+        const employee = demo.findByCredential(identifier, method)
         if (employee) return employee
         const message = 'Employee is not existing.'
         toast({ severity: 'error', summary: 'Employee', detail: message })
@@ -303,7 +303,7 @@
     }
 
     const verifyEmployeeFaceAndSubmit = async (identifier, method) => {
-        const employee = await verifyEmployeeIdentifier(identifier)
+        const employee = await verifyEmployeeIdentifier(identifier, method)
         if (!employee) return
 
         if (method === 'rfid') {
@@ -346,15 +346,30 @@
         state.hasTyped = false
     }
 
+    // The simulated scanner matches whoever was registered most recently in the
+    // admin demo, otherwise a random employee who has not clocked in yet.
+    const pickEmployee = (canMatch) => {
+        const candidates = employees.filter(canMatch)
+        const present = presentEmployees()
+        const waiting = candidates.filter((e) => !present.includes(e))
+        const registered = waiting.filter((e) => e.registered_in_demo).sort((a, b) => b.created_at - a.created_at)
+        if (registered.length) return registered[0]
+        const pool = waiting.length ? waiting : candidates
+        return pool[Math.floor(Math.random() * pool.length)]
+    }
+
     const submitFaceAttendance = async () => {
         ensureFlowReady(state.attendanceType || undefined)
         await openCameraForCapture()
         startProcessing('face', 'Processing facial recognition...')
         setStatus('Recognizing face...')
         await wait(1400)
-        const present = presentEmployees()
-        const pool = employees.filter((e) => !present.includes(e))
-        const employee = (pool.length ? pool : employees)[Math.floor(Math.random() * (pool.length || employees.length))]
+        const employee = pickEmployee((e) => e.has_face)
+        if (!employee) {
+            toast({ severity: 'error', summary: 'Face Recognition', detail: 'No registered employee faces are available.' })
+            resetAttendanceSelection()
+            return
+        }
         drawOverlay(fullName(employee))
         setStatus(`Recognized ${fullName(employee)}.`)
         await wait(700)
@@ -368,7 +383,12 @@
         toast({ severity: 'info', summary: 'Fingerprint', detail: 'Scan your registered finger on the scanner.', life: 8000 })
         setStatus('Scan your registered finger on the scanner.')
         await wait(2200)
-        const employee = employees[Math.floor(Math.random() * employees.length)]
+        const employee = pickEmployee((e) => e.fingerprints?.length > 0)
+        if (!employee) {
+            toast({ severity: 'error', summary: 'Fingerprint', detail: 'No registered fingerprints are available.' })
+            resetAttendanceSelection()
+            return
+        }
         setStatus('Fingerprint matched. Recording attendance...')
         await openCameraForCapture({ loadFaceVerification: false, silent: true })
         await wait(600)
@@ -422,7 +442,13 @@
     })
 
     if (window.matchMedia('(max-width: 47.99rem)').matches) $('demoGuide').open = false
-    window.addEventListener('storage', (e) => { if (e.key === demo.STORAGE_KEY) renderPresent() })
+    window.addEventListener('storage', (e) => {
+        if (e.key === demo.EMPLOYEES_KEY) {
+            demo.refreshEmployees()
+            renderCelebrants()
+        }
+        if (e.key === demo.STORAGE_KEY || e.key === demo.EMPLOYEES_KEY) renderPresent()
+    })
     renderAnnouncements()
     renderCelebrants()
     renderPresent()
