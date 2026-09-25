@@ -1,184 +1,178 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Attendance Monitoring System | Demo</title>
-  <style>
-    :root { color-scheme: light; --ink: #17211f; --muted: #687571; --line: #d9e1dc; --paper: #f5f7f3; --white: #fff; --green: #1c765c; --soft: #e4f1ea; --amber: #a56a17; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 Georgia, serif; }
-    .shell { max-width: 1180px; margin: auto; padding: 28px 22px 56px; }
-    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid var(--line); padding-bottom: 22px; }
-    .brand { font: 700 20px/1 Arial, sans-serif; letter-spacing: -.03em; }
-    .brand span { color: var(--green); }
-    .back { color: var(--green); font: 600 12px Arial, sans-serif; text-decoration: none; text-transform: uppercase; letter-spacing: .08em; }
-    .intro { padding: 58px 0 34px; display: flex; justify-content: space-between; gap: 40px; align-items: end; }
-    .eyebrow, .label { color: var(--green); font: 700 11px Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { max-width: 700px; margin: 10px 0 12px; font-size: clamp(38px, 6vw, 72px); line-height: .98; font-weight: 400; letter-spacing: -.045em; }
-    .intro p { max-width: 320px; color: var(--muted); margin: 0; }
-    .notice { background: var(--soft); border: 1px solid #c9e1d4; padding: 14px 16px; color: #28624f; font: 13px Arial, sans-serif; }
-    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-    .metric, .panel { background: var(--white); border: 1px solid var(--line); }
-    .metric { padding: 19px; }
-    .metric strong { display: block; font: 700 32px Arial, sans-serif; margin: 9px 0 2px; }
-    .metric small { color: var(--muted); font: 12px Arial, sans-serif; }
-    .dashboard { display: grid; grid-template-columns: 1.45fr .8fr; gap: 12px; }
-    .panel { padding: 22px; }
-    .panel-head { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 6px; }
-    h2 { font-size: 23px; font-weight: 400; margin: 0; }
-    .date { color: var(--muted); font: 12px Arial, sans-serif; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 15px 8px; border-bottom: 1px solid #edf0ed; }
-    th { color: var(--muted); font: 700 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
-    td { font-size: 14px; }
-    td:nth-child(2), td:nth-child(3) { font-family: Arial, sans-serif; font-size: 13px; }
-    .pill { display: inline-block; border-radius: 999px; padding: 4px 9px; background: var(--soft); color: var(--green); font: 700 10px Arial, sans-serif; text-transform: uppercase; }
-    .side-list { list-style: none; padding: 0; margin: 0; }
-    .side-list li { display: flex; justify-content: space-between; gap: 15px; padding: 16px 0; border-bottom: 1px solid #edf0ed; font-family: Arial, sans-serif; font-size: 13px; }
-    .side-list span { color: var(--muted); }
-    .online { color: var(--green) !important; font-weight: 700; }
-    footer { color: var(--muted); font: 12px Arial, sans-serif; margin-top: 24px; }
-    .app { min-height: 100vh; display: grid; grid-template-columns: 238px 1fr; background: #f6f8f6; }
-    .sidebar { background: #17211f; color: #d9e5df; padding: 25px 16px; display: flex; flex-direction: column; }
-    .sidebar .brand { color: #fff; padding: 0 12px 35px; }
-    .sidebar .brand span { color: #8cd4b4; }
-    .workspace { color: #8fa49b; font: 10px Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; padding: 0 12px 10px; }
-    .nav { display: grid; gap: 4px; }
-    .nav a { color: #b7c9c0; text-decoration: none; padding: 12px; border-radius: 4px; font: 13px Arial, sans-serif; }
-    .nav a.active, .nav a:hover { color: #fff; background: #2b5145; }
-    .sidebar-note { margin-top: auto; border-top: 1px solid #30423c; padding: 18px 12px 0; color: #8fa49b; font: 11px/1.6 Arial, sans-serif; }
-    .main { min-width: 0; padding: 26px 34px 46px; }
-    .appbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 38px; }
-    .appbar h1 { font: 600 25px Arial, sans-serif; letter-spacing: -.04em; margin: 0 0 5px; }
-    .appbar p { color: var(--muted); font: 13px Arial, sans-serif; margin: 0; }
-    .app-actions { display: flex; align-items: center; gap: 14px; }
-    .demo-badge { border: 1px solid #c9e1d4; background: var(--soft); color: var(--green); padding: 9px 12px; font: 700 10px Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
-    .back { border: 1px solid var(--line); background: #fff; padding: 10px 12px; }
-    .intro, .topbar, .notice, footer { display: none; }
-    .main .metrics { grid-template-columns: repeat(4, 1fr); }
-    .metric { border: 0; border-radius: 5px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
-    .metric strong { color: var(--ink); }
-    .section-title { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin: 32px 0 14px; }
-    .section-title h2 { font: 600 17px Arial, sans-serif; letter-spacing: -.02em; }
-    .filter { border: 1px solid var(--line); color: var(--muted); background: #fff; padding: 9px 12px; font: 12px Arial, sans-serif; }
-    .main .dashboard { grid-template-columns: minmax(0, 1.5fr) minmax(260px, .7fr); }
-    .panel { border: 0; border-radius: 5px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
-    .table-wrap { overflow-x: auto; }
-    .avatar { display: inline-grid; place-items: center; width: 27px; height: 27px; margin-right: 8px; border-radius: 50%; background: #dcece3; color: var(--green); font: 700 10px Arial, sans-serif; vertical-align: middle; }
-    .employee { white-space: nowrap; }
-    .event-list { list-style: none; padding: 0; margin: 0; }
-    .event-list li { display: grid; grid-template-columns: 9px 1fr auto; gap: 10px; align-items: center; padding: 14px 0; border-bottom: 1px solid #edf0ed; font: 12px Arial, sans-serif; }
-    .event-list i { width: 8px; height: 8px; background: #55a77f; border-radius: 50%; }
-    .event-list span { color: var(--muted); font-size: 11px; }
-    .status-card { margin-top: 12px; padding-top: 20px; border-top: 1px solid var(--line); }
-    .status-card h3 { margin: 0 0 14px; font: 600 14px Arial, sans-serif; }
-    .progress { height: 7px; margin: 10px 0 8px; background: #e7ece8; border-radius: 99px; overflow: hidden; }
-    .progress span { display: block; width: 87.5%; height: 100%; background: var(--green); }
-    .verification-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .verification-card { background: var(--white); border: 0; border-radius: 5px; padding: 22px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
-    .verification-card h3 { margin: 0 0 6px; font: 600 17px Arial, sans-serif; }
-    .verification-card p { margin: 0 0 18px; color: var(--muted); font: 13px/1.6 Arial, sans-serif; }
-    .face-scan { display: grid; grid-template-columns: 84px 1fr; gap: 16px; align-items: center; }
-    .camera-stage { display: none; position: relative; min-height: 300px; margin: 14px 0 0; overflow: hidden; border-radius: 5px; background: #17211f; }
-    .camera-preview { display: block; width: 100%; min-height: 300px; max-height: 360px; object-fit: cover; }
-    .face-detection-box { position: absolute; top: 12%; left: 25%; width: 50%; height: 76%; border: 4px solid #ef7777; border-radius: 8px; box-shadow: 0 0 0 999px rgba(23,33,31,.18), 0 0 22px rgba(239,119,119,.7); pointer-events: none; transition: left .12s, top .12s, width .12s, height .12s, border-color .2s, box-shadow .2s; }
-    .face-detection-box::before { content: 'NO FACE DETECTED'; position: absolute; top: -25px; left: 0; color: #ef7777; font: 700 11px Arial, sans-serif; letter-spacing: .1em; white-space: nowrap; }
-    .face-detection-box.detected { border-color: #55c98a; box-shadow: 0 0 0 999px rgba(23,33,31,.18), 0 0 22px rgba(85,201,138,.85); }
-    .face-detection-box.detected::before { content: 'FACE DETECTED'; color: #55c98a; }
-    .face-frame { position: relative; display: grid; place-items: center; width: 84px; height: 84px; border: 2px solid #8cc5aa; border-radius: 50%; background: #e5f2eb; color: var(--green); font: 700 25px Arial, sans-serif; }
-    .face-frame::after { content: ''; position: absolute; inset: 8px; border: 1px dashed #7db798; border-radius: 50%; }
-    .verification-status { color: var(--green); font: 700 12px Arial, sans-serif; }
-    .verification-detail { display: block; margin-top: 5px; color: var(--muted); font: 12px Arial, sans-serif; }
-    .verify-button { margin-top: 16px; border: 1px solid var(--green); border-radius: 4px; padding: 9px 12px; background: #fff; color: var(--green); font: 700 12px Arial, sans-serif; }
-    .verify-button:hover { background: var(--green); color: #fff; }
-    .map-preview { position: relative; min-height: 220px; overflow: hidden; border: 1px solid #d4e2db; border-radius: 4px; }
-    #liveMap { height: 220px; width: 100%; }
-    .geo-details { display: flex; justify-content: space-between; gap: 12px; margin-top: 13px; font: 12px Arial, sans-serif; }
-    .geo-details span { color: var(--muted); }
-    .geo-details strong { color: var(--green); }
-    .geo-button { margin-top: 13px; border: 0; background: transparent; color: var(--green); padding: 0; font: 700 12px Arial, sans-serif; }
-    .photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .photo-slot { overflow: hidden; min-height: 102px; border: 1px dashed #b8cec1; border-radius: 5px; background: #f1f6f2; text-align: center; }
-    .photo-slot img { display: none; width: 100%; height: 102px; object-fit: cover; }
-    .photo-slot label { display: grid; place-items: center; min-height: 102px; padding: 10px; color: var(--green); font: 700 12px Arial, sans-serif; cursor: pointer; }
-    .photo-slot small { display: block; margin-top: 4px; color: var(--muted); font-weight: 400; }
-    .photo-recorded { margin-top: 10px; color: var(--muted); font: 11px Arial, sans-serif; }
-    .registration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .registration-card { background: var(--white); border: 0; border-radius: 5px; padding: 22px; box-shadow: 0 2px 8px rgba(23,33,31,.04); }
-    .registration-card h3 { margin: 0 0 6px; font: 600 17px Arial, sans-serif; }
-    .registration-card p { margin: 0 0 16px; color: var(--muted); font: 13px/1.6 Arial, sans-serif; }
-    .registration-form { display: grid; gap: 11px; }
-    .registration-form label { color: var(--muted); font: 700 10px Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-    .registration-form input, .registration-form select { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: 10px; color: var(--ink); background: #fff; font: 13px Arial, sans-serif; }
-    .biometric-box { margin-top: 14px; padding: 13px; border: 1px solid var(--line); border-radius: 5px; }
-    .biometric-box strong { display: block; margin-bottom: 8px; font: 700 12px Arial, sans-serif; }
-    .registration-video { display: none; width: 100%; max-height: 160px; margin-bottom: 10px; border-radius: 4px; background: #17211f; object-fit: cover; }
-    .registration-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .registration-status { color: var(--muted); font: 12px Arial, sans-serif; }
-    .registration-save { width: 100%; margin-top: 14px; border: 0; border-radius: 4px; padding: 12px; background: var(--green); color: #fff; font: 700 12px Arial, sans-serif; }
-    .registration-save:disabled { background: #8aa69a; }
-    @media (max-width: 760px) { .verification-grid, .registration-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 900px) { .app { grid-template-columns: 72px 1fr; } .sidebar .brand { font-size: 0; padding-left: 12px; } .sidebar .brand span { font-size: 20px; } .workspace, .nav a span, .sidebar-note { display: none; } .nav a { text-align: center; font-size: 0; } .nav a::first-letter { font-size: 18px; } .main { padding: 24px 20px 40px; } }
-    @media (max-width: 680px) { .app { display: block; } .sidebar { display: block; padding: 14px 16px; } .sidebar .brand { display: inline-block; padding: 0; } .nav { display: inline-flex; float: right; } .nav a { padding: 8px; } .main { clear: both; padding: 25px 16px 35px; } .appbar { align-items: flex-start; flex-direction: column; margin-bottom: 25px; } .main .metrics { grid-template-columns: repeat(2, 1fr); } .main .dashboard { grid-template-columns: 1fr; } .app-actions { width: 100%; justify-content: space-between; } .panel { overflow-x: auto; } table { min-width: 560px; } }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home - Time Clock</title>
+    <meta name="description" content="Interactive demo of the TimeClock attendance monitoring home screen with simulated RFID, keypad, face, and fingerprint attendance.">
+    <link rel="icon" href="./attendance-assets/mcasia-logo.png">
+    <link rel="stylesheet" href="./attendance-assets/timeclock.css">
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar"><div class="brand">attend<span>✳</span></div><div class="workspace">Workspace</div><nav class="nav" aria-label="Demo navigation"><a class="active" href="#dashboard">▦ <span>Dashboard</span></a><a href="#attendance">◷ <span>Attendance</span></a><a href="#devices">⌁ <span>Devices</span></a><a href="#reports">▤ <span>Reports</span></a></nav><div class="sidebar-note">READ-ONLY DEMO<br>Sample data only<br><br>Built for portfolio review</div></aside>
-    <main class="main" id="dashboard"><header class="appbar"><div><h1>Good morning, Angelo</h1><p>Here is today's attendance overview.</p></div><div class="app-actions"><span class="demo-badge">Demo mode</span><a class="back" href="./">Portfolio ↗</a></div></header>
-      <section class="metrics"><div class="metric"><span class="label">Present today</span><strong>42</strong><small>of 48 employees</small></div><div class="metric"><span class="label">Late arrivals</span><strong>03</strong><small>requires review</small></div><div class="metric"><span class="label">On leave</span><strong>03</strong><small>approved requests</small></div><div class="metric"><span class="label">Devices online</span><strong>04</strong><small>all systems operational</small></div></section>
-      <div class="section-title" id="attendance"><h2>Attendance activity</h2><span class="filter">Today · March 24, 2026 ▾</span></div>
-      <section class="dashboard"><div class="panel"><div class="panel-head"><h2>Recent check-ins</h2><span class="date">48 total records</span></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Time in</th><th>Time out</th><th>Photo in</th><th>Photo out</th><th>Device</th><th>Status</th></tr></thead><tbody><tr><td class="employee"><span class="avatar">MS</span>Maria Santos</td><td>07:42 AM</td><td>05:01 PM</td><td><span class="pill">Captured</span></td><td><span class="pill">Captured</span></td><td>RFID Turnstile</td><td><span class="pill">Present</span></td></tr><tr><td class="employee"><span class="avatar">DR</span>Daniel Reyes</td><td>07:56 AM</td><td>04:58 PM</td><td><span class="pill">Captured</span></td><td><span class="pill">Captured</span></td><td>Fingerprint</td><td><span class="pill">Present</span></td></tr><tr><td class="employee"><span class="avatar">AC</span>Angela Cruz</td><td>08:18 AM</td><td>—</td><td><span class="pill">Captured</span></td><td><span class="pill" style="background:#fff0d9;color:#a56a17">Pending</span></td><td>Mobile check-in</td><td><span class="pill" style="background:#fff0d9;color:#a56a17">Late</span></td></tr><tr><td class="employee"><span class="avatar">MV</span>Mark Villanueva</td><td>08:02 AM</td><td>05:12 PM</td><td><span class="pill">Captured</span></td><td><span class="pill">Captured</span></td><td>Facial recognition</td><td><span class="pill">Present</span></td></tr></tbody></table></div></div><aside class="panel" id="devices"><div class="panel-head"><h2>Live events</h2><span class="date">Updated now</span></div><ul class="event-list"><li><i></i><b>RFID turnstile accepted</b><span>2m ago</span></li><li><i></i><b>Fingerprint terminal synced</b><span>8m ago</span></li><li><i></i><b>Mobile location verified</b><span>14m ago</span></li><li><i></i><b>Daily sync completed</b><span>21m ago</span></li></ul><div class="status-card"><h3>Device availability</h3><div style="display:flex;justify-content:space-between;font:12px Arial,sans-serif"><span>4 of 4 online</span><b class="online">87.5% attendance</b></div><div class="progress"><span></span></div><small style="color:var(--muted);font:11px Arial,sans-serif">All connected devices are responding.</small></div></aside></section>
-      <div class="section-title"><h2>Verification tools</h2><span class="date">Sample workflow</span></div><section class="verification-grid"><article class="verification-card"><h3>Facial recognition</h3><p>Turn on the camera to verify an employee identity before recording attendance.</p><div class="face-scan"><div class="face-frame">AC</div><div><span class="verification-status" id="faceStatus">Opening camera...</span><span class="verification-detail" id="faceDetail">The browser will request camera permission.</span></div></div><div class="camera-stage" id="cameraStage"><video class="camera-preview" id="cameraPreview" autoplay muted playsinline></video><span class="face-detection-box" id="faceDetectionBox"></span></div><button class="verify-button" id="faceButton" type="button">Retry camera</button></article><article class="verification-card"><h3>Geolocation check</h3><p>Use your browser location to confirm you are inside the approved attendance area.</p><div class="map-preview" aria-label="Live location map"><div id="liveMap"></div></div><div class="geo-details"><span id="geoStatus">Location not checked</span><strong>Warehouse office</strong></div><button class="geo-button" id="geoButton" type="button">Use my location</button></article></section>
-      <div class="section-title"><h2>Register employee</h2><span class="date">Sample registration flow</span></div><section class="registration-grid"><article class="registration-card"><h3>Employee details</h3><p>Create a staff profile before adding biometric credentials.</p><div class="registration-form"><div><label for="employeeName">Full name</label><input id="employeeName" value="Angela Cruz"></div><div><label for="employeeId">Employee ID</label><input id="employeeId" value="EMP-0024"></div><div><label for="employeeDepartment">Department</label><select id="employeeDepartment"><option>Operations</option><option>Administration</option><option>Sales</option></select></div></div><button class="registration-save" id="registrationSave" type="button">Save sample employee</button><p class="registration-status" id="registrationStatus">No changes saved.</p></article><article class="registration-card"><h3>Biometric enrollment</h3><p>Register a face and up to three fingerprint templates for the employee.</p><div class="biometric-box"><strong>Face registration</strong><video class="registration-video" id="registrationVideo" autoplay muted playsinline></video><div class="registration-actions"><button class="verify-button" id="registrationFaceButton" type="button">Open camera</button><span class="registration-status" id="registrationFaceStatus">Not captured</span></div></div><div class="biometric-box"><strong>Fingerprint enrollment</strong><div class="registration-actions"><select id="fingerSelect" aria-label="Select finger"><option>Right index</option><option>Left index</option><option>Right thumb</option></select><button class="verify-button" id="fingerButton" type="button">Enroll finger</button><span class="registration-status" id="fingerStatus">No finger enrolled</span></div></div></article></section>
-      <div class="section-title" id="reports"><h2>What this system demonstrates</h2></div><section class="panel"><p style="max-width:760px;color:var(--muted);font:14px/1.7 Arial,sans-serif;margin:0">This interface represents the administrative dashboard for an attendance platform with RFID, facial recognition, ZKTeco fingerprint integration, geofenced validation, offline synchronization, and a custom RFID turnstile.</p></section>
-    </main>
-  </div>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <script>
-    const faceButton = document.getElementById('faceButton')
-    const faceStatus = document.getElementById('faceStatus')
-    const geoButton = document.getElementById('geoButton')
-    const geoStatus = document.getElementById('geoStatus')
-    let liveMap
-    let userMarker
-    let warehouseMarker
-    let geofenceCircle
-    const cameraStage = document.getElementById('cameraStage')
-    const cameraPreview = document.getElementById('cameraPreview')
-    const faceDetectionBox = document.getElementById('faceDetectionBox')
-    const faceDetail = document.getElementById('faceDetail')
-    let cameraStream
-    let detectionTimer
-    let registrationStream
-    const registrationFaceButton = document.getElementById('registrationFaceButton')
-    const registrationVideo = document.getElementById('registrationVideo')
-    const registrationFaceStatus = document.getElementById('registrationFaceStatus')
-    const fingerButton = document.getElementById('fingerButton')
-    const fingerStatus = document.getElementById('fingerStatus')
-    const registrationSave = document.getElementById('registrationSave')
-    const registrationStatus = document.getElementById('registrationStatus')
-    const resetFaceBox = () => { faceDetectionBox.style.left = '25%'; faceDetectionBox.style.top = '12%'; faceDetectionBox.style.width = '50%'; faceDetectionBox.style.height = '76%' }
-    const moveFaceBox = face => { const bounds = face.boundingBox; const sourceWidth = cameraPreview.videoWidth || cameraPreview.clientWidth; const sourceHeight = cameraPreview.videoHeight || cameraPreview.clientHeight; if (!bounds || !sourceWidth || !sourceHeight) return; const scaleX = cameraPreview.clientWidth / sourceWidth; const scaleY = cameraPreview.clientHeight / sourceHeight; faceDetectionBox.style.left = `${bounds.x * scaleX}px`; faceDetectionBox.style.top = `${bounds.y * scaleY}px`; faceDetectionBox.style.width = `${bounds.width * scaleX}px`; faceDetectionBox.style.height = `${bounds.height * scaleY}px` }
-    let faceModelReady = false
-    const detectFace = async () => { if (!faceModelReady || !window.faceapi || !cameraPreview.videoWidth) return; try { const result = await faceapi.detectSingleFace(cameraPreview, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 })); const detected = Boolean(result); faceDetectionBox.classList.toggle('detected', detected); if (detected) { const box = result.box; const scaleX = cameraPreview.clientWidth / cameraPreview.videoWidth; const scaleY = cameraPreview.clientHeight / cameraPreview.videoHeight; faceDetectionBox.style.left = `${box.x * scaleX}px`; faceDetectionBox.style.top = `${box.y * scaleY}px`; faceDetectionBox.style.width = `${box.width * scaleX}px`; faceDetectionBox.style.height = `${box.height * scaleY}px` } else resetFaceBox(); faceStatus.textContent = detected ? 'Face detected · Angela Cruz' : 'No face detected'; faceDetail.textContent = detected ? 'Green box is following the detected face.' : 'Move a face inside the red detection box.' } catch { faceStatus.textContent = 'Unable to analyze camera frame' } }
-    const startFaceDetection = async () => { if (!navigator.mediaDevices?.getUserMedia) { faceStatus.textContent = 'Camera unavailable in this browser'; return } try { if (cameraStream) cameraStream.getTracks().forEach(track => track.stop()); cameraStage.style.display = 'block'; faceStatus.textContent = 'Loading face detection...'; if (window.faceapi && !faceModelReady) { await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'); faceModelReady = true } cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); cameraPreview.srcObject = cameraStream; faceStatus.textContent = 'Camera active · looking for face'; faceButton.textContent = 'Camera active'; clearInterval(detectionTimer); cameraPreview.addEventListener('loadeddata', detectFace, { once: true }); detectionTimer = setInterval(detectFace, 250) } catch { faceStatus.textContent = 'Camera or face model unavailable'; faceDetail.textContent = 'Allow camera access and reload the demo.'; faceButton.textContent = 'Try camera again' } }
-    faceButton.addEventListener('click', startFaceDetection)
-    window.addEventListener('load', startFaceDetection)
-    const warehouseLocation = { latitude: 14.7182, longitude: 121.0606 }
-    const distanceInMeters = (latitude, longitude) => { const earthRadius = 6371000; const latDelta = (latitude - warehouseLocation.latitude) * Math.PI / 180; const lonDelta = (longitude - warehouseLocation.longitude) * Math.PI / 180; const a = Math.sin(latDelta / 2) ** 2 + Math.cos(warehouseLocation.latitude * Math.PI / 180) * Math.cos(latitude * Math.PI / 180) * Math.sin(lonDelta / 2) ** 2; return Math.round(earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) }
-    const updateLocation = position => { const distance = distanceInMeters(position.coords.latitude, position.coords.longitude); const inside = distance <= 100; geoStatus.textContent = inside ? `Within geofence · ${distance} m` : `Outside geofence · ${distance} m`; geoStatus.style.color = inside ? 'var(--green)' : '#b44949'; if (liveMap) { const location = [position.coords.latitude, position.coords.longitude]; if (!userMarker) userMarker = L.marker(location).addTo(liveMap).bindPopup('You are here').openPopup(); else userMarker.setLatLng(location); liveMap.setView(location, 16) } geoButton.textContent = 'Location updated' }
-    const locationError = error => { geoStatus.textContent = error.code === 1 ? 'Location permission denied' : 'Location unavailable'; geoStatus.style.color = '#b44949'; geoButton.textContent = 'Try location again' }
-    const requestLocation = () => { if (!navigator.geolocation) { locationError({ code: 2 }); return } geoStatus.textContent = 'Checking your location...'; geoStatus.style.color = 'var(--muted)'; geoButton.textContent = 'Checking...'; navigator.geolocation.getCurrentPosition(updateLocation, locationError, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }) }
-    geoButton.addEventListener('click', requestLocation)
-    const initializeMap = () => { liveMap = L.map('liveMap').setView([warehouseLocation.latitude, warehouseLocation.longitude], 16); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(liveMap); warehouseMarker = L.marker([warehouseLocation.latitude, warehouseLocation.longitude]).addTo(liveMap).bindPopup('Warehouse office'); geofenceCircle = L.circle([warehouseLocation.latitude, warehouseLocation.longitude], { radius: 100, color: '#23785e', fillColor: '#b9d7c9', fillOpacity: .3 }).addTo(liveMap); requestLocation() }
-    window.addEventListener('load', initializeMap)
-    registrationFaceButton.addEventListener('click', async () => { if (!navigator.mediaDevices?.getUserMedia) { registrationFaceStatus.textContent = 'Camera unavailable'; return } try { registrationStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); registrationVideo.srcObject = registrationStream; registrationVideo.style.display = 'block'; registrationFaceStatus.textContent = 'Face captured · ready to save'; registrationFaceButton.textContent = 'Face captured' } catch { registrationFaceStatus.textContent = 'Camera permission denied' } })
-    fingerButton.addEventListener('click', () => { fingerStatus.textContent = `${document.getElementById('fingerSelect').value} enrolled`; fingerButton.textContent = 'Enrolled' })
-    registrationSave.addEventListener('click', () => { registrationStatus.textContent = 'Sample employee saved with current details.'; registrationSave.textContent = 'Employee saved'; registrationSave.disabled = true })
-  </script>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <div class="page">
+        <header class="logo">
+            <img src="./attendance-assets/mcasia-logo.png" alt="TimeClock logo">
+        </header>
+
+        <main class="layout">
+            <!-- Feed & Staff -->
+            <aside class="feed-column">
+                <div class="card grow animate-fade-up" style="animation-delay: 0.3s">
+                    <div class="card-heading">
+                        <div class="card-title">
+                            <div class="badge-icon accent"><svg class="icon"><use href="#i-bell"/></svg></div>
+                            <h2>Latest</h2>
+                        </div>
+                    </div>
+                    <div class="scroll-list announcements" id="announcements"></div>
+                </div>
+
+                <div class="card grow animate-fade-up" style="animation-delay: 0.1s" id="birthdayCard">
+                    <div class="card-heading" style="justify-content: flex-start">
+                        <div class="card-title">
+                            <div class="badge-icon paragraph"><svg class="icon"><use href="#i-gift"/></svg></div>
+                            <h2>Today's Birthday Celebrants</h2>
+                        </div>
+                    </div>
+                    <div class="scroll-list people">
+                        <div id="celebrants" class="people"></div>
+                        <div class="birthday-note">"Enjoy your special day!"</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Camera + clock -->
+            <section class="center-column animate-fade-up" style="animation-delay: 0.2s">
+                <div class="camera-card" id="cameraCard" hidden>
+                    <div class="camera-pill live"><div class="dot"></div><span>LIVE</span></div>
+                    <div class="camera-pill gps"><svg class="icon icon-md gps-ok"><use href="#i-map-pin"/></svg><span>GPS ready</span></div>
+                    <div class="camera-stage">
+                        <video id="video" autoplay playsinline muted></video>
+                        <canvas id="overlay"></canvas>
+                        <div class="camera-fallback" id="cameraFallback" hidden>
+                            <svg class="icon"><use href="#i-scan-face"/></svg>
+                            <p>Camera unavailable. Verification is simulated in this demo.</p>
+                        </div>
+                    </div>
+                    <p class="camera-hint" id="cameraHint">Look straight at the camera to record your attendance.</p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 2rem">
+                    <div class="card animate-fade-up">
+                        <div class="clock-head">
+                            <p class="clock-date" id="currentDate"></p>
+                            <h1 class="clock-time" id="currentTime"></h1>
+                        </div>
+
+                        <div>
+                            <div class="button-grid">
+                                <button type="button" class="action time-in" data-action="time-in" aria-pressed="false">
+                                    <svg class="icon"><use href="#i-log-in"/></svg>
+                                    <span>Time In</span>
+                                </button>
+                                <button type="button" class="action time-out" data-action="time-out" aria-pressed="false">
+                                    <svg class="icon"><use href="#i-log-out"/></svg>
+                                    <span>Time Out</span>
+                                </button>
+                            </div>
+                            <div class="button-grid">
+                                <button type="button" class="action neutral inline" id="fingerprintButton" title="Fingerprint">
+                                    <svg class="icon" id="fingerprintIcon"><use href="#i-fingerprint"/></svg>
+                                    <span>Fingerprint</span>
+                                </button>
+                                <button type="button" class="action neutral inline" id="faceButton" title="Facial Recognition">
+                                    <svg class="icon"><use href="#i-scan-face"/></svg>
+                                    <span>Face</span>
+                                </button>
+                            </div>
+
+                            <div class="processing" id="processing" hidden>
+                                <svg class="icon spin"><use href="#i-loader"/></svg>
+                                <p id="processingLabel">Processing, please wait...</p>
+                            </div>
+
+                            <div class="idle" id="idle">
+                                <div>
+                                    <input id="rfidInput" class="rfid-capture" type="text" autocomplete="off" aria-hidden="true" tabindex="-1">
+                                    <div class="keypad" id="keypad" hidden>
+                                        <input id="passwordInput" type="password" name="keypad-attendance-password" autocomplete="new-password" autocapitalize="off" spellcheck="false" placeholder="Password" aria-label="Employee password">
+                                        <div class="submit-wrap"><button type="button" class="submit" id="submitButton">Submit</button></div>
+                                    </div>
+                                </div>
+                                <p class="status-text" id="statusText" hidden></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card greeting-card animate-fade-up">
+                    <div class="greeting-row">
+                        <div class="greeting-icon" id="greetingIcon">👋</div>
+                        <div style="min-width: 0">
+                            <p class="greeting-title" id="greetingTitle"></p>
+                            <p class="greeting-sub" id="greetingSub">Ready to clock in?</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Present today -->
+            <aside class="present-column">
+                <div class="card grow animate-fade-up" style="animation-delay: 0.4s">
+                    <div class="card-heading">
+                        <div class="card-title">
+                            <div class="badge-icon paragraph"><svg class="icon"><use href="#i-users"/></svg></div>
+                            <h2>Present</h2>
+                        </div>
+                        <span class="present-count" id="presentCount"></span>
+                    </div>
+                    <div class="scroll-list present-list" id="presentList"></div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <details class="demo-guide" id="demoGuide" open>
+        <summary>Demo guide</summary>
+        <div class="demo-guide-body">
+            <p>Sample employees only. Hardware and server checks are simulated in your browser. Clock-ins also appear in the admin panel.</p>
+            <table>
+                <tbody>
+                    <tr><td>Keypad password</td><td><code>1001</code> – <code>1012</code></td></tr>
+                    <tr><td>RFID card</td><td><code>0012345678</code></td></tr>
+                </tbody>
+            </table>
+            <button type="button" class="tap" id="tapRfid">Tap sample RFID card</button>
+            <a href="./attendance-admin-demo.html" target="_blank" rel="noopener">Open admin panel →</a>
+            <a href="./">← Back to portfolio</a>
+        </div>
+    </details>
+
+    <div id="modalRoot"></div>
+
+    <!-- Lucide icons (ISC), as used by @lucide/vue in the original app -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+        <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+        <symbol id="i-circle-user" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+        <symbol id="i-log-in" viewBox="0 0 24 24"><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></symbol>
+        <symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+        <symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></symbol>
+        <symbol id="i-scan-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
+        <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol>
+        <symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+        <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+        <symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+        <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    </svg>
+
+    <script src="./attendance-assets/demo-data.js"></script>
+    <script src="./attendance-assets/timeclock.js"></script>
 </body>
 </html>
