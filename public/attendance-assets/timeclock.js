@@ -12,11 +12,11 @@
     const employees = demo.employees
     const announcements = demo.announcements.filter((a) => a.status === 'published')
     const typeStyles = {
-        general: { label: 'General', accent: '#004643', soft: 'rgba(0, 70, 67, 0.14)', text: '#001e1d' },
-        urgent: { label: 'Urgent', accent: '#e16162', soft: 'rgba(225, 97, 98, 0.16)', text: '#001e1d' },
-        event: { label: 'Event', accent: '#abd1c6', soft: 'rgba(171, 209, 198, 0.35)', text: '#001e1d' },
-        holiday: { label: 'Holiday', accent: '#f9bc60', soft: 'rgba(249, 188, 96, 0.24)', text: '#001e1d' },
-        policy: { label: 'Policy', accent: '#001e1d', soft: 'rgba(0, 30, 29, 0.12)', text: '#001e1d' },
+        general: { label: 'General', accent: '#2563eb', soft: '#eff6ff', text: '#1d4ed8' },
+        urgent: { label: 'Urgent', accent: '#e11d48', soft: '#fff1f2', text: '#be123c' },
+        event: { label: 'Event', accent: '#7c3aed', soft: '#f5f3ff', text: '#6d28d9' },
+        holiday: { label: 'Holiday', accent: '#d97706', soft: '#fffbeb', text: '#b45309' },
+        policy: { label: 'Policy', accent: '#0f172a', soft: '#f1f5f9', text: '#334155' },
     }
 
     const $ = (id) => document.getElementById(id)

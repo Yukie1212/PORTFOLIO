@@ -625,3 +625,49 @@ input:focus {
   margin: 6px 0 0;
   color: #475569;
 }
+
+.auth-card .brand-mark {
+  background: linear-gradient(135deg, #111827 0%, #1d4ed8 100%);
+  border: 0;
+  color: #fff;
+}
+
+.auth-card .brand h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #0f172a;
+}
+
+.auth-card .eyebrow {
+  color: #64748b;
+}
+
+/* On an actual phone, fill the screen instead of drawing a phone inside the phone. */
+@media (max-width: 480px) {
+  .app-shell {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .phone-frame {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    padding: calc(16px + env(safe-area-inset-top)) 16px 14px;
+  }
+
+  .auth-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+}
