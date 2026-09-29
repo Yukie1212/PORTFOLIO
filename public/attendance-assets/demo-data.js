@@ -72,6 +72,37 @@ window.TimeclockDemo = (() => {
     // Keypad attendance checks the employee's keypad password; RFID checks the card UID.
     const findByCredential = (value, method) => employees.find((e) => (method === 'rfid' ? e.rfid_uid === value : e.keypad_password === value))
 
+    /* ---------- Attendance methods (General Settings) ----------
+       Switched on and off in the admin panel; the TimeClock reads the same
+       setting and updates live through the storage event. */
+    const METHODS_KEY = 'timeclock-demo-methods-v1'
+    const METHODS = [
+        ['rfid', 'RFID card', 'Employees tap their ID card on the reader.'],
+        ['keypad', 'Keypad password', 'Employees type their personal attendance password.'],
+        ['fingerprint', 'Fingerprint', 'ZKTeco fingerprint scanner through the local agent.'],
+        ['face', 'Facial recognition', 'Employees clock in by looking at the camera.'],
+        ['faceVerify', 'Face check after keypad', 'Confirms the face matches the employee after a keypad password.'],
+        ['photo', 'Photo capture', 'Silently captures a photo with RFID and fingerprint attendance.'],
+    ]
+    const memoryMethods = {}
+    const getMethods = () => {
+        const defaults = Object.fromEntries(METHODS.map(([key]) => [key, true]))
+        try {
+            return { ...defaults, ...JSON.parse(localStorage.getItem(METHODS_KEY) || '{}') }
+        } catch {
+            return { ...defaults, ...memoryMethods }
+        }
+    }
+    const setMethod = (key, enabled) => {
+        const next = { ...getMethods(), [key]: Boolean(enabled) }
+        try {
+            localStorage.setItem(METHODS_KEY, JSON.stringify(next))
+        } catch {
+            memoryMethods[key] = Boolean(enabled)
+        }
+        return next
+    }
+
     /* ---------- Employees registered or edited in the admin demo ---------- */
     const EMPLOYEES_KEY = 'timeclock-demo-employees-v1'
     const memoryEmployees = {}
@@ -253,6 +284,10 @@ window.TimeclockDemo = (() => {
     return {
         STORAGE_KEY,
         EMPLOYEES_KEY,
+        METHODS_KEY,
+        METHODS,
+        getMethods,
+        setMethod,
         today,
         addDays,
         dateKey,

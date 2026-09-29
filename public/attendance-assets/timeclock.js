@@ -9,14 +9,15 @@
     const SCHEDULE = { time_in_start: '05:00', time_in_end: '11:59', time_out_start: '12:00', time_out_end: '23:59' }
 
     const demo = window.TimeclockDemo
+    let methods = demo.getMethods()
     const employees = demo.employees
     const announcements = demo.announcements.filter((a) => a.status === 'published')
     const typeStyles = {
-        general: { label: 'General', accent: '#1f765d', soft: '#e7efeb', text: '#1f765d' },
-        urgent: { label: 'Urgent', accent: '#b4413c', soft: '#fbefed', text: '#b4413c' },
-        event: { label: 'Event', accent: '#527087', soft: '#e9eef2', text: '#415a6d' },
-        holiday: { label: 'Holiday', accent: '#a8741a', soft: '#f7f0e2', text: '#83590f' },
-        policy: { label: 'Policy', accent: '#26312e', soft: '#eef0ed', text: '#26312e' },
+        general: { label: 'General', accent: '#111111', soft: '#f1f1f1', text: '#111111' },
+        urgent: { label: 'Urgent', accent: '#ed212b', soft: '#fdecec', text: '#c8161f' },
+        event: { label: 'Event', accent: '#6b7280', soft: '#f1f2f4', text: '#4b5563' },
+        holiday: { label: 'Holiday', accent: '#b45309', soft: '#fdf3e6', text: '#92400e' },
+        policy: { label: 'Policy', accent: '#c8161f', soft: '#fdecec', text: '#c8161f' },
     }
 
     const $ = (id) => document.getElementById(id)
@@ -147,7 +148,7 @@
         $('processing').hidden = !processing
         $('processingLabel').textContent = state.status && state.status !== READY ? state.status : 'Processing, please wait...'
         $('idle').hidden = processing
-        $('keypad').hidden = !state.showKeypad
+        $('keypad').hidden = !(state.showKeypad && methods.keypad)
         $('statusText').hidden = !(state.showKeypad || state.status !== READY)
         $('statusText').textContent = state.status
         $('cameraCard').hidden = !state.cameraActive
@@ -308,7 +309,14 @@
 
         if (method === 'rfid') {
             setStatus(`Recording attendance for ${fullName(employee)}...`)
-            await openCameraForCapture({ loadFaceVerification: false, silent: true })
+            if (methods.photo) await openCameraForCapture({ loadFaceVerification: false, silent: true })
+            await submitAttendance(employee, method)
+            return
+        }
+
+        // Keypad: the face check after the password can be switched off.
+        if (!methods.faceVerify) {
+            setStatus(`Recording attendance for ${fullName(employee)}...`)
             await submitAttendance(employee, method)
             return
         }
@@ -325,6 +333,10 @@
         const scanned = String(rfid ?? '').trim()
         $('rfidInput').value = ''
         if (!scanned || state.processingMethod) return
+        if (!methods.rfid) {
+            toast({ severity: 'warn', summary: 'RFID', detail: 'RFID attendance is turned off.' })
+            return
+        }
         const now = Date.now()
         if (now - lastScan < 1000) return
         lastScan = now
@@ -334,6 +346,7 @@
 
     const submitManualAttendance = async () => {
         const password = $('passwordInput').value.trim()
+        if (!methods.keypad) return
         if (!state.hasTyped) { $('passwordInput').value = ''; return }
         if (!password) {
             toast({ severity: 'warn', summary: 'Warning', detail: 'Enter password first.' })
@@ -359,6 +372,7 @@
     }
 
     const submitFaceAttendance = async () => {
+        if (!methods.face) return
         ensureFlowReady(state.attendanceType || undefined)
         await openCameraForCapture()
         startProcessing('face', 'Processing facial recognition...')
@@ -377,6 +391,7 @@
     }
 
     const submitFingerprintAttendance = async () => {
+        if (!methods.fingerprint) return
         ensureFlowReady(state.attendanceType || inferredAttendanceType())
         startProcessing('fingerprint', 'Connecting to Fingerprint scanner...')
         await wait(900)
@@ -390,12 +405,36 @@
             return
         }
         setStatus('Fingerprint matched. Recording attendance...')
-        await openCameraForCapture({ loadFaceVerification: false, silent: true })
+        if (methods.photo) await openCameraForCapture({ loadFaceVerification: false, silent: true })
         await wait(600)
         setStatus('Recording fingerprint attendance...')
         await wait(700)
         await submitAttendance(employee, 'fingerprint')
     }
+
+    /* ---------------- Attendance methods (on/off) ---------------- */
+    const applyMethods = () => {
+        $('fingerprintButton').hidden = !methods.fingerprint
+        $('faceButton').hidden = !methods.face
+        $('scanButtons').hidden = !methods.fingerprint && !methods.face
+        $('scanButtons').classList.toggle('single', methods.fingerprint !== methods.face)
+        $('tapRfid').hidden = !methods.rfid
+        $('rfidRow').hidden = !methods.rfid
+        $('methodsOff').hidden = methods.rfid || methods.keypad || methods.fingerprint || methods.face
+        $('methodSwitches').innerHTML = demo.METHODS.map(([key, label]) => `<label class="guide-switch">
+            <span>${escapeHtml(label)}</span>
+            <span class="switch"><input type="checkbox" role="switch" data-method="${key}"${methods[key] ? ' checked' : ''}><span aria-hidden="true"></span></span>
+        </label>`).join('')
+        render()
+    }
+    $('methodSwitches').addEventListener('change', (e) => {
+        const key = e.target.dataset.method
+        if (!key) return
+        methods = demo.setMethod(key, e.target.checked)
+        applyMethods()
+        const label = demo.METHODS.find(([k]) => k === key)[1]
+        toast({ severity: 'info', summary: 'Settings', detail: `${label} ${e.target.checked ? 'enabled' : 'disabled'}.` })
+    })
 
     /* ---------------- Wiring ---------------- */
     document.querySelectorAll('[data-action]').forEach((btn) => btn.addEventListener('click', () => {
@@ -448,7 +487,13 @@
             renderCelebrants()
         }
         if (e.key === demo.STORAGE_KEY || e.key === demo.EMPLOYEES_KEY) renderPresent()
+        if (e.key === demo.METHODS_KEY) {
+            methods = demo.getMethods()
+            applyMethods()
+            toast({ severity: 'info', summary: 'Settings', detail: 'Attendance methods were updated by an administrator.' })
+        }
     })
+    applyMethods()
     renderAnnouncements()
     renderCelebrants()
     renderPresent()
