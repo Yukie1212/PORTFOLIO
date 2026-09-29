@@ -12,11 +12,11 @@
     const employees = demo.employees
     const announcements = demo.announcements.filter((a) => a.status === 'published')
     const typeStyles = {
-        general: { label: 'General', accent: '#2563eb', soft: '#eff6ff', text: '#1d4ed8' },
-        urgent: { label: 'Urgent', accent: '#e11d48', soft: '#fff1f2', text: '#be123c' },
-        event: { label: 'Event', accent: '#7c3aed', soft: '#f5f3ff', text: '#6d28d9' },
-        holiday: { label: 'Holiday', accent: '#d97706', soft: '#fffbeb', text: '#b45309' },
-        policy: { label: 'Policy', accent: '#0f172a', soft: '#f1f5f9', text: '#334155' },
+        general: { label: 'General', accent: '#1f765d', soft: '#e7efeb', text: '#1f765d' },
+        urgent: { label: 'Urgent', accent: '#b4413c', soft: '#fbefed', text: '#b4413c' },
+        event: { label: 'Event', accent: '#527087', soft: '#e9eef2', text: '#415a6d' },
+        holiday: { label: 'Holiday', accent: '#a8741a', soft: '#f7f0e2', text: '#83590f' },
+        policy: { label: 'Policy', accent: '#26312e', soft: '#eef0ed', text: '#26312e' },
     }
 
     const $ = (id) => document.getElementById(id)

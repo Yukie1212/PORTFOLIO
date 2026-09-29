@@ -36,3 +36,7 @@ Official instructions: https://docs.github.com/en/pages/getting-started-with-git
 Edit `src/App.jsx` to update the name, biography, capabilities, project links, and contact information. Professional details and the email address were updated from the September 2026 CV (public/Angelo_Miguel_Cua_CV.pdf), which is available as a download. Local project evidence includes attendancemonitoring and attendance-mobile-app; the latter is presented as a prototype. Project artwork is an illustrative concept diagram, not a render of the linked CAD files. No unverified career statistics are included.
 
 Colors, layout, and responsive styles are in `src/App.css` and `src/index.css`. Page title and description are in `index.html`.
+
+## Smart Library demo
+
+`library-demo.html` (source in `src/library/`) is a browser-only demo of an RFID smart library: borrowing and return stations with facial verification, an exit turnstile that allows a book out only with an active loan for that exact copy, overdue monitoring with scheduled reminders, reports, and a 3D student portal. A service layer in `src/library/lib/services.js` exposes the hardware API (`/api/rfid/student-scan`, `/api/gate/check`, and so on) with device keys, rate limiting and validation. The device simulator in the bottom-right corner stands in for the readers, gate and camera. Data is sample data stored in the browser's local storage; "Reset demo" in the simulator's Clock tab restores it.

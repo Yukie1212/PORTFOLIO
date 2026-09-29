@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: 'index.html',
         mobile: 'mobile-attendance-demo.html',
+        library: 'library-demo.html',
       },
     },
   },

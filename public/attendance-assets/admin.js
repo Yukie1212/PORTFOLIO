@@ -548,7 +548,7 @@
     const fingerprintSummary = (e) => `<div class="fi-summary"><p class="fi-summary-label">Registered fingerprint</p>
         ${e.fingerprints?.length
             ? `<div class="fi-chips">${e.fingerprints.map((f) => `<span class="fi-chip">${esc(f.label)} · ${esc(fmtDateTimeShort(f.enrolled_at))}</span>`).join('')}</div>`
-            : '<p style="margin-top: 0.5rem; font-weight: 500; color: #0f172a">No fingerprint registered yet.</p>'}</div>`
+            : '<p style="margin-top: 0.5rem; font-weight: 500; color: #26312e">No fingerprint registered yet.</p>'}</div>`
     const faceSummary = (e) => `<div class="fi-summary"><p class="fi-summary-label">Registered face</p>
         <div class="fi-profile" style="margin-top: 0.75rem">${e.face_photo ? `<img class="fi-face-thumb" src="${e.face_photo}" alt="${esc(D.fullName(e))}">` : ''}
         <div><strong style="font-size: 0.875rem">${esc(D.fullName(e))}</strong><span style="font-size: 0.75rem">${e.has_face ? 'Registered face exists' : 'No face registered yet'}</span></div></div></div>`
@@ -724,7 +724,7 @@
         onClose?.()
         render()
     }
-    const employeeHeader = (e) => `<div class="fi-summary"><strong style="color: #0f172a">${esc(D.fullName(e))}</strong><p class="fi-muted-text" style="margin-top: 0.25rem">${esc(e.employee_id)} · ${esc(e.position)}</p></div>`
+    const employeeHeader = (e) => `<div class="fi-summary"><strong style="color: #26312e">${esc(D.fullName(e))}</strong><p class="fi-muted-text" style="margin-top: 0.25rem">${esc(e.employee_id)} · ${esc(e.position)}</p></div>`
 
     /* Fingerprint enrollment (filament-fingerprint-enrollment.js, ZKTeco bridge simulated) */
     let fp = null
@@ -745,10 +745,10 @@
             ${employeeHeader(e)}
             <div class="fi-summary"><div class="row"><p class="fi-summary-label">Registered fingerprint</p><span class="fi-pill">${registered.length}/3 registered</span></div>
                 ${registered.length ? `<div class="fi-chips">${registered.map((t) => `<span class="fi-chip">${esc(t.label)} · ${esc(fmtDateTimeShort(t.enrolled_at))}<button type="button" data-fp-remove="${t.finger_index}"${fp.busy ? ' disabled' : ''}>${fp.removing === t.finger_index ? 'Removing...' : 'Remove'}</button></span>`).join('')}</div>`
-                    : '<p style="margin-top: 0.5rem; font-weight: 500; color: #0f172a">No fingerprint registered yet.</p>'}</div>
+                    : '<p style="margin-top: 0.5rem; font-weight: 500; color: #26312e">No fingerprint registered yet.</p>'}</div>
             ${fp.message ? `<div class="fi-alert ${fp.success ? 'success' : 'warning'}" role="status">${esc(fp.message)}</div>` : ''}
             ${limit ? '<div class="fi-alert warning">This employee already has 3 registered fingers. Remove one before registering another.</div>' : ''}
-            <div class="fi-stack" style="gap: 0.75rem"><p style="font-weight: 600; color: #0f172a">Select finger</p>
+            <div class="fi-stack" style="gap: 0.75rem"><p style="font-weight: 600; color: #26312e">Select finger</p>
                 <div class="fi-fingers">${FINGERS.map((f) => `<button type="button" class="fi-finger${fp.selected === f.index ? ' selected' : isRegistered(f) ? ' registered' : ''}" data-fp-finger="${f.index}"${fp.busy || isRegistered(f) || limit ? ' disabled' : ''}>${f.label}${isRegistered(f) ? '<small>Registered</small>' : fp.selected === f.index ? '<small>Selected</small>' : ''}</button>`).join('')}</div></div>
             ${fp.busy || fp.scans ? `<div class="fi-scan-progress" aria-label="Scan ${fp.scans} of 3">${[1, 2, 3].map((n) => `<span class="${n <= fp.scans ? 'on' : ''}"></span>`).join('')}</div>` : ''}
             <div><button type="button" class="fi-btn fi-btn-primary" data-fp-scan${fp.busy || !fp.selected || limit ? ' disabled' : ''}>${fp.busy ? 'Reading fingerprint...' : 'Scan fingerprint'}</button></div>
@@ -810,7 +810,7 @@
                     </div>
                 </div>
                 <div class="fi-stack">
-                    <div class="fi-summary"><p class="fi-summary-label">Status</p><p style="margin-top: 0.25rem; font-weight: 500; color: #0f172a" id="faceStatus" role="status"></p>
+                    <div class="fi-summary"><p class="fi-summary-label">Status</p><p style="margin-top: 0.25rem; font-weight: 500; color: #26312e" id="faceStatus" role="status"></p>
                         <p style="margin-top: 0.5rem; font-size: 0.75rem; font-weight: 500; color: #d97706">Remove eyeglasses, shades, masks, or any object covering the face before saving.</p></div>
                     <div class="fi-face-stats"><div><b id="faceFaces">0</b><span>Faces</span></div><div><b id="faceClear">Check</b><span>Face</span></div></div>
                     <div id="faceMessage"></div>
@@ -906,9 +906,9 @@
             ctx.drawImage(video, (video.videoWidth - sw) / 2, (video.videoHeight - sh) / 2, sw, sh, 0, 0, canvas.width, canvas.height)
         } else {
             const e = wizardEmployee()
-            ctx.fillStyle = '#abd1c6'
+            ctx.fillStyle = '#b9d7c9'
             ctx.fillRect(0, 0, 240, 300)
-            ctx.fillStyle = '#004643'
+            ctx.fillStyle = '#1f765d'
             ctx.beginPath(); ctx.arc(120, 120, 58, 0, Math.PI * 2); ctx.fill()
             ctx.beginPath(); ctx.ellipse(120, 290, 100, 90, 0, Math.PI, 0); ctx.fill()
             ctx.fillStyle = '#fffffe'
@@ -937,7 +937,7 @@
         const max = Math.max(...values, 1)
         const pts = values.map((v, i) => [(i / (values.length - 1)) * 100, 24 - (v / max) * 20 - 2])
         const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
-        const stroke = { success: '#10b981', warning: '#f59e0b', info: '#0ea5e9', danger: '#f43f5e', gray: '#94a3b8' }[color]
+        const stroke = { success: '#1f765d', warning: '#a8741a', info: '#527087', danger: '#b4413c', gray: '#9aa59f' }[color]
         return `<svg class="fi-wi-stat-chart" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><path d="${line} L100,24 L0,24 Z" fill="${stroke}" fill-opacity="0.1"/><path d="${line}" fill="none" stroke="${stroke}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`
     }
 
@@ -960,16 +960,16 @@
             data: {
                 labels: days.map((d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
                 datasets: [
-                    dataset('Clock-ins', days.map((d) => count(d, (r) => r.time_in)), '#004643', 'rgba(0, 70, 67, 0.15)'),
-                    dataset('Late', days.map((d) => count(d, (r) => r.is_late)), '#f59e0b', 'rgba(245, 158, 11, 0.12)'),
-                    dataset('Overtime', days.map((d) => count(d, (r) => r.is_overtime)), '#0ea5e9', 'rgba(14, 165, 233, 0.12)'),
+                    dataset('Clock-ins', days.map((d) => count(d, (r) => r.time_in)), '#1f765d', 'rgba(31, 118, 93, 0.12)'),
+                    dataset('Late', days.map((d) => count(d, (r) => r.is_late)), '#a8741a', 'rgba(168, 116, 26, 0.1)'),
+                    dataset('Overtime', days.map((d) => count(d, (r) => r.is_overtime)), '#527087', 'rgba(82, 112, 135, 0.1)'),
                 ],
             },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, font: { family: 'Mona Sans' } } } },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eef3f1' } }, x: { grid: { display: false } } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#e8ece8' } }, x: { grid: { display: false } } },
             },
         })
     }
