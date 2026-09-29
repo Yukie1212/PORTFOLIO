@@ -54,4 +54,5 @@ h2{font-size:clamp(2rem,3.2vw,3.2rem)}
 .career-list article>p:last-child,.capability p{font-size:.92rem;line-height:1.7}
 .contact{margin:70px 0 42px;border-radius:4px;padding:42px}
 footer{border-top:1px solid #dfe4df;padding-top:24px}
-@media(max-width:720px){.hero-layout{padding:38px 0 45px;gap:32px}.hero-visual{width:100%}.section{padding:62px 0}.project-grid{gap:38px}.project-image{aspect-ratio:1.35}.project-title h3{font-size:1.4rem}.contact{margin:50px 0 30px;padding:28px 22px}}
+@media(max-width:720px){.hero-layout{grid-template-columns:minmax(0,1fr);padding:38px 0 45px;gap:32px}h1,.hero-copy h1{font-size:clamp(2.6rem,11vw,3.6rem)}.hero-bottom{gap:16px}.hero-strip{gap:8px 14px}.hero-visual{width:100%}.section{padding:62px 0}.project-grid{gap:38px}.project-image{aspect-ratio:1.35}.project-title h3{font-size:1.4rem}.contact{margin:50px 0 30px;padding:28px 22px}}
+.cert-list{margin:12px 0 0;padding-left:18px;color:#687671;font-size:.92rem;line-height:1.7}.cert-list li+li{margin-top:8px}.cert-list li::marker{color:#1f765d}
