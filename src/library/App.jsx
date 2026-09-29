@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Simulator from './components/Simulator.jsx'
 import { Avatar, Icon, Toasts } from './components/ui.jsx'
+import { toast } from './lib/bus.js'
 import { runScheduler } from './lib/services.js'
 import { now, store, useStore } from './lib/store.js'
 import { fmtShortDateTime } from './lib/time.js'
@@ -94,6 +95,20 @@ function AdminLayout({ route, go, onSignOut }) {
   const [page, id] = route
   const unread = s.notifications.filter((n) => n.audience === 'librarian' && !n.read).length
   const alarms = s.gateEvents.filter((g) => g.result !== 'allowed' && !g.resolved).length
+  const pendingRenewals = (s.renewalRequests ?? []).filter((r) => r.status === 'pending')
+  const seenRenewals = useRef(null)
+  useEffect(() => {
+    const ids = pendingRenewals.map((r) => r.id)
+    if (seenRenewals.current) {
+      const fresh = pendingRenewals.filter((r) => !seenRenewals.current.includes(r.id))
+      fresh.forEach((r) => {
+        const student = s.students.find((x) => x.id === r.studentId)
+        const title = s.titles.find((x) => x.id === s.copies.find((c) => c.id === r.copyId)?.titleId)
+        toast('info', 'New renewal request', `${student?.name} wants to renew '${title?.title}'. Review it on the dashboard.`)
+      })
+    }
+    seenRenewals.current = ids
+  })
   const content = {
     dashboard: <Dashboard go={go} />,
     books: id ? <BookDetail id={id} go={go} /> : <Books go={go} />,
@@ -111,6 +126,7 @@ function AdminLayout({ route, go, onSignOut }) {
             <a key={key} href={`#/admin/${key}`} className={page === key || (!page && key === 'dashboard') ? 'on' : ''} onClick={() => setOpen(false)}>
               <Icon name={icon} size={18} /><span>{label}</span>
               {key === 'security' && alarms > 0 && <em className="nav-count danger">{alarms}</em>}
+              {key === 'dashboard' && pendingRenewals.length > 0 && <em className="nav-count" title="Renewal requests">{pendingRenewals.length}</em>}
               {key === 'notifications' && unread > 0 && <em className="nav-count">{unread}</em>}
             </a>
           ))}
@@ -143,7 +159,7 @@ function StudentLayout({ route, go, me, onSignOut }) {
   const [page, id] = route
   const unread = s.notifications.filter((n) => n.audience === 'student' && n.studentId === me.id && !n.read).length
   const content = {
-    home: <StudentHome me={me} go={go} />, library: <StudentLibrary me={me} go={go} openId={id} />, mybooks: <StudentBooks me={me} />,
+    home: <StudentHome me={me} go={go} />, library: <StudentLibrary me={me} go={go} openId={id} />, mybooks: <StudentBooks me={me} go={go} />,
     history: <StudentHistory me={me} />, notifications: <StudentNotifications me={me} />, profile: <StudentProfile me={me} />,
   }[page] ?? <StudentHome me={me} go={go} />
   return (

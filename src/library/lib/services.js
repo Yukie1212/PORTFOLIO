@@ -69,8 +69,8 @@ export function copyProblems(s, copy, student) {
   if (copy.status === 'lost') problems.push('This copy is marked lost.')
   if (copy.status === 'maintenance') problems.push('This copy is under maintenance.')
   if (copy.status === 'reserved') {
-    const res = s.reservations.find((r) => r.titleId === copy.titleId)
-    if (!res || res.studentId !== student?.id) problems.push('This copy is on hold for another student.')
+    const res = s.reservations.find((r) => r.copyId === copy.id)
+    if (res && res.studentId !== student?.id) problems.push('This copy is on hold for another student.')
   }
   if (!borrowRules(s, copy).lendable) problems.push(`${categoryName(s, title.category)} books cannot be borrowed.`)
   return problems
@@ -84,7 +84,7 @@ export function renewProblems(s, tx) {
   if (student.status !== 'active') problems.push('Your account is suspended.')
   if (tx.renewals >= s.settings.renewalLimit) problems.push(`Renewal limit reached (${s.settings.renewalLimit}).`)
   if (!borrowRules(s, copy).renewable) problems.push('Books in this category cannot be renewed.')
-  if (s.reservations.some((r) => r.titleId === copy.titleId && r.studentId !== tx.studentId)) problems.push('Another student has reserved this book.')
+  if (s.reservations.some((r) => r.titleId === copy.titleId && r.studentId !== tx.studentId && !r.copyId)) problems.push('Another student is waiting for this book.')
   if (now() > tx.dueAt + s.settings.graceHours * HOUR) problems.push('Overdue books must be returned, not renewed.')
   return problems
 }
@@ -99,6 +99,25 @@ function trackScan(s, uidValue, device) {
     notify(s, { audience: 'librarian', kind: 'suspicious', tone: 'warn', title: 'Suspicious repeated RFID scans', body: `Tag ${uidValue} was scanned ${repeats} times in under a minute at ${device}.` })
     log(s, { user: device, action: 'Suspicious repeated RFID scans', device, result: `${repeats} scans / 60 s` })
   }
+}
+
+// ---------- Reservations ----------
+export const HOLD_DAYS = 2
+
+function assignHold(s, reservation, copy) {
+  const t = now()
+  Object.assign(reservation, { copyId: copy.id, readyAt: t, expiresAt: t + HOLD_DAYS * DAY })
+  copy.status = 'reserved'
+  const title = titleById(s, copy.titleId)
+  notify(s, { audience: 'student', studentId: reservation.studentId, kind: 'reserved', title: 'Your reserved book is ready', body: `'${title.title}' (copy #${copy.copyNo}) is on the hold shelf for you until ${fmtDate(reservation.expiresAt)} at ${fmtTime(reservation.expiresAt)}. Borrow it at the borrowing station.` })
+}
+
+/** Give a copy to the next student waiting for its title, or put it back on the shelf. */
+function holdNext(s, copy) {
+  if (!copy) return
+  const next = s.reservations.filter((r) => r.titleId === copy.titleId && !r.copyId).sort((a, b) => a.createdAt - b.createdAt)[0]
+  if (next) assignHold(s, next, copy)
+  else copy.status = 'available'
 }
 
 // ---------- Core services ----------
@@ -156,7 +175,11 @@ export const services = {
     const tx = { id: uid('tx'), copyId, studentId, borrowedAt: t, dueAt: t + days * DAY, duration: Number(days), returnedAt: null, renewals: 0, status: 'active', device, verification }
     s.transactions.push(tx)
     copy.status = 'borrowed'
-    s.reservations = s.reservations.filter((r) => !(r.titleId === copy.titleId && r.studentId === studentId))
+    const mine = s.reservations.find((r) => r.titleId === copy.titleId && r.studentId === studentId)
+    if (mine) {
+      s.reservations = s.reservations.filter((r) => r !== mine)
+      if (mine.copyId && mine.copyId !== copy.id) holdNext(s, copyById(s, mine.copyId))
+    }
     const title = titleById(s, copy.titleId)
     log(s, { user, action: 'Book borrowed', device, copyId, studentId, result: `Due ${fmtDateTime(tx.dueAt)}` })
     notify(s, { audience: 'student', studentId, kind: 'borrowed', title: 'Borrowing confirmed', body: `You borrowed '${title.title}'. Please return it by ${fmtDate(tx.dueAt)} at ${fmtTime(tx.dueAt)}.`, channels: ['email', 'inapp'] })
@@ -174,16 +197,93 @@ export const services = {
     tx.returnDevice = device
     tx.lateReturn = t > tx.dueAt + s.settings.graceHours * HOUR
     tx.status = 'returned'
-    const reservation = s.reservations.find((r) => r.titleId === copy.titleId)
-    copy.status = condition === 'damaged' ? 'maintenance' : reservation ? 'reserved' : 'available'
+    if (condition === 'damaged') copy.status = 'maintenance'
+    else holdNext(s, copy)
     const title = titleById(s, copy.titleId)
     log(s, { user, action: 'Book returned', device, copyId, studentId: tx.studentId, result: tx.lateReturn ? 'Returned late' : 'On time' })
     notify(s, { audience: 'student', studentId: tx.studentId, kind: 'returned', title: 'Return received', body: `Thanks! '${title.title}' was returned ${tx.lateReturn ? 'late' : 'on time'} on ${fmtDateTime(t)}.`, channels: ['email', 'inapp'] })
-    if (reservation && copy.status === 'reserved') notify(s, { audience: 'student', studentId: reservation.studentId, kind: 'reserved', title: 'Your reserved book is ready', body: `'${title.title}' is on the hold shelf for you. Borrow it at the circulation desk.` })
     return { status: 200, body: { transaction: tx, onTime: !tx.lateReturn, copyStatus: copy.status } }
   },
 
-  renew(s, { txId, user = 'Student' }) {
+  /** Reserve a title: hold a copy on the shelf now, or join the waiting list. */
+  reserve(s, { titleId, studentId, user = 'Student' }) {
+    const student = studentById(s, studentId)
+    const title = titleById(s, titleId)
+    if (!student || !title) return { status: 404, body: { error: 'Book or student not found.' } }
+    if (student.status !== 'active') return { status: 422, body: { error: 'Your account is suspended.' } }
+    if (s.reservations.some((r) => r.titleId === titleId && r.studentId === studentId)) return { status: 409, body: { error: 'You already reserved this book.' } }
+    if (activeTxForStudent(s, studentId).some((tx) => copyById(s, tx.copyId).titleId === titleId)) return { status: 409, body: { error: 'You are already borrowing this book.' } }
+    if (s.reservations.filter((r) => r.studentId === studentId).length >= s.settings.maxBooks) return { status: 422, body: { error: `You can hold up to ${s.settings.maxBooks} reservations.` } }
+    const reservation = { id: uid('rs'), titleId, studentId, createdAt: now(), copyId: null }
+    s.reservations.push(reservation)
+    const copy = s.copies.find((c) => c.titleId === titleId && c.status === 'available')
+    if (copy) {
+      assignHold(s, reservation, copy)
+    } else {
+      const position = s.reservations.filter((r) => r.titleId === titleId && !r.copyId).length
+      notify(s, { audience: 'student', studentId, kind: 'reserved', title: 'Added to the waiting list', body: `You're #${position} in line for '${title.title}'. We'll hold a copy for you when one is returned.`, channels: ['inapp'] })
+    }
+    log(s, { user, action: 'Book reserved', device: 'Web', copyId: copy?.id ?? null, studentId, result: copy ? `Copy #${copy.copyNo} on hold` : 'Waiting list' })
+    notify(s, { audience: 'librarian', kind: 'reservation', silent: true, title: 'New reservation', body: `${student.name} reserved '${title.title}'${copy ? ` · copy #${copy.copyNo} to the hold shelf` : ' (waiting list)'}.` })
+    return { status: 201, body: { reservation } }
+  },
+
+  cancelReservation(s, { id, user = 'Student' }) {
+    const reservation = s.reservations.find((r) => r.id === id)
+    if (!reservation) return { status: 404, body: { error: 'Reservation not found.' } }
+    s.reservations = s.reservations.filter((r) => r !== reservation)
+    const title = titleById(s, reservation.titleId)
+    if (reservation.copyId) holdNext(s, copyById(s, reservation.copyId))
+    log(s, { user, action: 'Reservation cancelled', device: 'Web', copyId: reservation.copyId, studentId: reservation.studentId, result: title.title })
+    if (user !== 'Student') notify(s, { audience: 'student', studentId: reservation.studentId, kind: 'reserved', title: 'Reservation cancelled', body: `The library cancelled your reservation for '${title.title}'.`, channels: ['inapp'] })
+    return { status: 200, body: { cancelled: true } }
+  },
+
+  /** Student asks to renew; a librarian must approve before the due date moves. */
+  requestRenewal(s, { txId, user = 'Student' }) {
+    s.renewalRequests ??= []
+    const tx = s.transactions.find((x) => x.id === txId)
+    if (!tx) return { status: 404, body: { error: 'Loan not found.' } }
+    if (s.renewalRequests.some((r) => r.txId === txId && r.status === 'pending')) return { status: 409, body: { error: 'A renewal request is already waiting for the librarian.' } }
+    const problems = renewProblems(s, tx)
+    if (problems.length) return { status: 422, body: { error: problems[0], problems } }
+    const request = { id: uid('rr'), txId, studentId: tx.studentId, copyId: tx.copyId, requestedAt: now(), currentDueAt: tx.dueAt, proposedDueAt: tx.dueAt + tx.duration * DAY, status: 'pending' }
+    s.renewalRequests.unshift(request)
+    const title = titleById(s, copyById(s, tx.copyId).titleId)
+    const student = studentById(s, tx.studentId)
+    log(s, { user, action: 'Renewal requested', device: 'Web', copyId: tx.copyId, studentId: tx.studentId, result: 'Waiting for librarian approval' })
+    notify(s, { audience: 'librarian', kind: 'renewal', title: 'Renewal request', body: `${student.name} wants to renew '${title.title}' until ${fmtDate(request.proposedDueAt)}.` })
+    notify(s, { audience: 'student', studentId: tx.studentId, kind: 'renewal', title: 'Renewal requested', body: `Your request to renew '${title.title}' was sent to the librarian. You'll be notified once it's reviewed.`, channels: ['inapp'] })
+    bus.emit('renewal-request', request)
+    return { status: 201, body: { request } }
+  },
+
+  decideRenewal(s, { requestId, approve, reason = '', user = 'Librarian' }) {
+    const request = (s.renewalRequests ?? []).find((r) => r.id === requestId)
+    if (!request || request.status !== 'pending') return { status: 404, body: { error: 'This request has already been handled.' } }
+    const tx = s.transactions.find((x) => x.id === request.txId)
+    const title = titleById(s, copyById(s, request.copyId).titleId)
+    request.decidedAt = now()
+    request.decidedBy = user
+    if (approve) {
+      const res = services.renew(s, { txId: request.txId, user, approved: true })
+      if (res.status !== 200) {
+        request.status = 'declined'
+        request.reason = res.body.error
+        notify(s, { audience: 'student', studentId: request.studentId, kind: 'renewal', title: 'Renewal declined', body: `Your renewal for '${title.title}' could not be approved: ${res.body.error}` })
+        return res
+      }
+      request.status = 'approved'
+      return { status: 200, body: { request, transaction: tx } }
+    }
+    request.status = 'declined'
+    request.reason = reason.trim() || 'Please return the book by the current due date.'
+    log(s, { user, action: 'Renewal declined', device: 'Web', copyId: request.copyId, studentId: request.studentId, result: request.reason })
+    notify(s, { audience: 'student', studentId: request.studentId, kind: 'renewal', title: 'Renewal declined', body: `Your renewal for '${title.title}' was declined. ${request.reason} It is still due ${fmtDate(tx.dueAt)} at ${fmtTime(tx.dueAt)}.` })
+    return { status: 200, body: { request } }
+  },
+
+  renew(s, { txId, user = 'Student', approved = false }) {
     const tx = s.transactions.find((x) => x.id === txId)
     if (!tx) return { status: 404, body: { error: 'Loan not found.' } }
     const problems = renewProblems(s, tx)
@@ -192,8 +292,8 @@ export const services = {
     tx.dueAt += tx.duration * DAY
     tx.status = 'active'
     const title = titleById(s, copyById(s, tx.copyId).titleId)
-    log(s, { user, action: 'Book renewed', device: 'Web', copyId: tx.copyId, studentId: tx.studentId, result: `New due date ${fmtDateTime(tx.dueAt)}` })
-    notify(s, { audience: 'student', studentId: tx.studentId, kind: 'renewed', title: 'Renewal confirmed', body: `'${title.title}' is now due ${fmtDate(tx.dueAt)} at ${fmtTime(tx.dueAt)}.`, channels: ['email', 'inapp'] })
+    log(s, { user, action: approved ? 'Renewal approved' : 'Book renewed', device: 'Web', copyId: tx.copyId, studentId: tx.studentId, result: `New due date ${fmtDateTime(tx.dueAt)}` })
+    notify(s, { audience: 'student', studentId: tx.studentId, kind: 'renewed', title: approved ? 'Renewal approved' : 'Renewal confirmed', body: `${approved ? 'The librarian approved your renewal. ' : ''}'${title.title}' is now due ${fmtDate(tx.dueAt)} at ${fmtTime(tx.dueAt)}.`, channels: ['email', 'inapp'] })
     return { status: 200, body: { transaction: tx } }
   },
 
@@ -286,6 +386,13 @@ export function runScheduler(silent = false) {
         if (t - at > DAY) return // Missed window (e.g. clock jumped): don't spam stale reminders.
         notify(s, { audience: 'student', studentId: tx.studentId, kind: r.offsetDays > 0 ? 'overdue' : 'reminder', silent, title: r.offsetDays > 0 ? 'Library Overdue Notice' : 'Library Reminder', body: reminderText(title.title, tx.dueAt, r.offsetDays) })
       })
+    })
+    s.reservations.filter((r) => r.copyId && r.expiresAt && t > r.expiresAt).forEach((r) => {
+      s.reservations = s.reservations.filter((x) => x !== r)
+      const title = titleById(s, r.titleId)
+      log(s, { user: 'Scheduler', action: 'Reservation expired', device: 'Scheduler', copyId: r.copyId, studentId: r.studentId, result: 'Not collected in time' })
+      notify(s, { audience: 'student', studentId: r.studentId, kind: 'reserved', silent, title: 'Reservation expired', body: `Your hold on '${title.title}' expired because it wasn't collected in time.`, channels: ['inapp'] })
+      holdNext(s, copyById(s, r.copyId))
     })
     const dayKey = `due-today:${startOfDay(t)}`
     if (!sent[dayKey]) {

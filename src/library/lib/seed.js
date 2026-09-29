@@ -182,8 +182,13 @@ export function createSeed(now = Date.now()) {
     transactions.push({ id: id('tx'), copyId: copy.id, studentId, borrowedAt, dueAt, duration, returnedAt: null, renewals, status: dueAt < now ? 'overdue' : 'active', device: 'BORROW-01' })
   })
 
-  const reservations = [{ id: id('rs'), titleId: 't3', studentId: 's6', createdAt: now - 20 * HOUR }]
-  copies.find((c) => c.titleId === 't3' && c.status === 'available').status = 'reserved'
+  const heldCopy = copies.find((c) => c.titleId === 't3' && c.status === 'available')
+  heldCopy.status = 'reserved'
+  const reservations = [{ id: id('rs'), titleId: 't3', studentId: 's6', createdAt: now - 20 * HOUR, copyId: heldCopy.id, readyAt: now - 20 * HOUR, expiresAt: now + 28 * HOUR }]
+
+  // A renewal request waiting for the librarian (Maria Clara Reyes · Noli Me Tángere).
+  const noliTx = transactions.find((tx) => tx.studentId === 's2' && tx.returnedAt == null && copies.find((c) => c.id === tx.copyId).titleId === 't13')
+  const renewalRequests = [{ id: id('rr'), txId: noliTx.id, studentId: 's2', copyId: noliTx.copyId, requestedAt: now - 40 * MINUTE, currentDueAt: noliTx.dueAt, proposedDueAt: noliTx.dueAt + noliTx.duration * DAY, status: 'pending' }]
 
   // Gate history over the last two weeks.
   const gateEvents = []
@@ -223,11 +228,11 @@ export function createSeed(now = Date.now()) {
   logs.sort((a, b) => b.at - a.at)
 
   return {
-    version: 1,
+    version: 2,
     clockOffset: 0,
     settings: structuredClone(DEFAULT_SETTINGS),
     categories: CATEGORIES,
-    titles, copies, students, transactions, reservations, gateEvents, securityEvents,
+    titles, copies, students, transactions, reservations, renewalRequests, gateEvents, securityEvents,
     notifications: [], notificationLogs: [], sentReminders: {}, faceLogs, logs,
     devices: DEVICES.map((d, i) => ({ ...d, status: i === 4 ? 'offline' : 'online', lastSeen: now - (i === 4 ? 3 * HOUR : Math.floor(rand() * 90) * 1000) })),
     scanHistory: [],

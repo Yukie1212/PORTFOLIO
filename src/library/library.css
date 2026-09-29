@@ -567,3 +567,22 @@ button.book3d:hover .book3d-inner, button.book3d:focus-visible .book3d-inner { -
   .print-area { border: 0; }
   .print-area .table-wrap { overflow: visible; }
 }
+
+/* ---------- Renewal requests (pops up on the dashboard) ---------- */
+.renewals { border: 1px solid #c7ddd3; border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--surface); box-shadow: 0 14px 30px -18px rgba(31, 118, 93, 0.45); animation: pop .3s ease-out; }
+.renewals-head { display: flex; gap: 12px; align-items: flex-start; padding: 14px 18px; background: var(--accent-soft); border-bottom: 1px solid #c7ddd3; }
+.renewals-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--radius); background: var(--accent); color: #fff; flex-shrink: 0; }
+.renewals-head h2 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; }
+.renewals-head p { font-size: 0.82rem; color: var(--ink-2); }
+.renewals ul { display: flex; flex-direction: column; }
+.renewals li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--rule); }
+.renewals li:first-child { border-top: 0; }
+@media (min-width: 720px) { .renewals li { grid-template-columns: 48px minmax(0, 1fr) auto; } }
+.renewal-cover { width: 48px; box-shadow: 0 4px 10px rgba(38, 49, 46, .2); }
+.renewal-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.renewal-who { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+.renewal-who .avatar { font-size: 0.55rem !important; }
+.renewal-new { color: var(--accent); }
+.renewal-reason { margin-top: 6px; }
+.renewal-actions { display: flex; gap: 8px; grid-column: 1 / -1; }
+@media (min-width: 720px) { .renewal-actions { grid-column: auto; } }

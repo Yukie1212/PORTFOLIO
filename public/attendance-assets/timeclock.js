@@ -160,8 +160,12 @@
 
     const updateTime = () => {
         const now = new Date()
-        $('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
-        $('currentDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        const h = now.getHours() % 12 || 12
+        const m = String(now.getMinutes()).padStart(2, '0')
+        const sec = String(now.getSeconds()).padStart(2, '0')
+        $('currentTime').innerHTML = `${h}:${m}<span class="t-sec">:${sec}</span><span class="t-ap">${now.getHours() < 12 ? 'AM' : 'PM'}</span>`
+        $('currentTime').setAttribute('aria-label', now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }))
+        $('currentDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
     }
 
     const toMinutes = (t) => { const [h = '0', m = '0'] = t.split(':'); return Number(h) * 60 + Number(m) }

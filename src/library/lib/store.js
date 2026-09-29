@@ -10,7 +10,7 @@ function load() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed?.version === 1) return parsed
+      if (parsed?.version === 2) return parsed
     }
   } catch {
     // Storage blocked (private mode, sandbox): fall back to a fresh seed.
@@ -28,6 +28,23 @@ function persist() {
   } catch {
     // Quota or blocked storage: the demo keeps working in memory.
   }
+}
+
+// Another tab (e.g. the student portal) changed the data: pick it up here.
+try {
+  window.addEventListener('storage', (e) => {
+    if (e.key !== STORAGE_KEY || !e.newValue) return
+    try {
+      const next = JSON.parse(e.newValue)
+      if (next?.version !== 2) return
+      state = next
+      listeners.forEach((fn) => fn())
+    } catch {
+      // Ignore a half-written value.
+    }
+  })
+} catch {
+  // No window (tests): nothing to sync.
 }
 
 export const store = {

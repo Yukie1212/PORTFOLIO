@@ -76,27 +76,29 @@
                         <div class="clock-head">
                             <p class="clock-date" id="currentDate"></p>
                             <h1 class="clock-time" id="currentTime"></h1>
+                            <p class="clock-shift">Shift 8:00 AM – 5:00 PM</p>
                         </div>
 
                         <div class="clock-body">
-                            <div class="button-grid">
+                            <div class="button-grid mode-switch" role="group" aria-label="Attendance type">
                                 <button type="button" class="action time-in" data-action="time-in" aria-pressed="false">
                                     <svg class="icon"><use href="#i-log-in"/></svg>
-                                    <span>Time In</span>
+                                    <span>Time in</span>
                                 </button>
                                 <button type="button" class="action time-out" data-action="time-out" aria-pressed="false">
                                     <svg class="icon"><use href="#i-log-out"/></svg>
-                                    <span>Time Out</span>
+                                    <span>Time out</span>
                                 </button>
                             </div>
+                            <p class="mode-hint">Pick one, or just scan. The kiosk uses the time of day.</p>
                             <div class="button-grid" id="scanButtons">
                                 <button type="button" class="action neutral inline" id="fingerprintButton" title="Fingerprint">
                                     <svg class="icon" id="fingerprintIcon"><use href="#i-fingerprint"/></svg>
-                                    <span>Fingerprint</span>
+                                    <span class="method-text"><span>Fingerprint</span><small>Use the scanner</small></span>
                                 </button>
                                 <button type="button" class="action neutral inline" id="faceButton" title="Facial Recognition">
                                     <svg class="icon"><use href="#i-scan-face"/></svg>
-                                    <span>Face</span>
+                                    <span class="method-text"><span>Face</span><small>Look at the camera</small></span>
                                 </button>
                             </div>
 

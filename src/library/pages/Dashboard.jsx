@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { BarList, ColumnChart, LineChart } from '../components/charts.jsx'
+import RenewalRequests from '../components/RenewalRequests.jsx'
 import { Avatar, Badge, Icon, PageHeader, Panel, Segmented, Stat } from '../components/ui.jsx'
 import { categoryName, now, txView, useStore } from '../lib/store.js'
 import { DAY, dueLabel, fmtDay, fmtShortDateTime, fmtTimeSec, startOfDay } from '../lib/time.js'
@@ -86,6 +87,8 @@ export default function Dashboard({ go }) {
         <button type="button" className="btn" onClick={() => go('borrowing')}><Icon name="borrow" />Borrowing station</button>
         <button type="button" className="btn btn-primary" onClick={() => go('gate')}><Icon name="gate" />RFID gate</button>
       </PageHeader>
+
+      <RenewalRequests />
 
       {stats.openAlarms > 0 && (
         <button type="button" className="alarm-banner" onClick={() => go('security')}>

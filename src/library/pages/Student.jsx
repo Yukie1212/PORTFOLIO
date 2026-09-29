@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Avatar, Badge, Book3D, Empty, Icon, Modal, Tilt } from '../components/ui.jsx'
 import { toast } from '../lib/bus.js'
-import { renewProblems, services, webAction, writeLog } from '../lib/services.js'
+import { HOLD_DAYS, renewProblems, services, webAction } from '../lib/services.js'
 import { activeTxForStudent, categoryName, now, titleAvailability, useStore } from '../lib/store.js'
-import { DAY, dueLabel, fmtDate, fmtShortDate, fmtShortDateTime, fmtTime } from '../lib/time.js'
+import { DAY, dueLabel, fmtShortDate, fmtShortDateTime } from '../lib/time.js'
 
 function CountdownRing({ tx, t }) {
   const total = tx.dueAt - tx.borrowedAt
@@ -100,7 +100,7 @@ export function StudentHome({ me, go }) {
 }
 
 function StudentNote({ n }) {
-  const icon = { reminder: 'clock', overdue: 'alert', borrowed: 'book', returned: 'return', renewed: 'refresh', reserved: 'sparkle' }[n.kind] ?? 'bell'
+  const icon = { reminder: 'clock', overdue: 'alert', borrowed: 'book', returned: 'return', renewed: 'refresh', renewal: 'refresh', reserved: 'sparkle' }[n.kind] ?? 'bell'
   return (
     <li className={`s-note s-note-${n.kind}${n.read ? '' : ' unread'}`}>
       <span className="s-note-icon"><Icon name={icon} size={18} /></span>
@@ -157,20 +157,37 @@ export function StudentLibrary({ me, go, openId }) {
   )
 }
 
+/** Where a student stands on a reservation: ready on the hold shelf, or their place in line. */
+function reservationStatus(s, r) {
+  if (r.copyId) {
+    const copy = s.copies.find((c) => c.id === r.copyId)
+    return { ready: true, text: `Ready · shelf ${copy?.shelf ?? 'hold'} · pick up by ${fmtShortDateTime(r.expiresAt)}` }
+  }
+  const queue = s.reservations.filter((x) => x.titleId === r.titleId && !x.copyId).sort((a, b) => a.createdAt - b.createdAt)
+  return { ready: false, text: `#${queue.findIndex((x) => x.id === r.id) + 1} in line · a copy will be held for you when one is returned` }
+}
+
 function BookModal({ me, title, onClose }) {
   const s = useStore()
   const a = titleAvailability(s, title.id)
-  const reserved = s.reservations.find((r) => r.titleId === title.id && r.studentId === me.id)
+  const mine = s.reservations.find((r) => r.titleId === title.id && r.studentId === me.id)
+  const borrowing = activeTxForStudent(s, me.id).some((tx) => s.copies.find((c) => c.id === tx.copyId)?.titleId === title.id)
   const shelf = a.copies.find((c) => c.status === 'available')?.shelf
   const t = now()
   const nextDue = s.transactions.filter((tx) => tx.returnedAt == null && a.copies.some((c) => c.id === tx.copyId)).sort((x, y) => x.dueAt - y.dueAt)[0]
+  const [error, setError] = useState('')
   const reserve = () => {
-    webAction((st) => {
-      st.reservations.push({ id: `rs_${Date.now().toString(36)}`, titleId: title.id, studentId: me.id, createdAt: now() })
-      writeLog(st, { user: me.name, action: 'Book reserved', studentId: me.id, copyId: a.copies[0]?.id, result: title.title })
-    })
-    toast('good', 'Reserved!', 'We will notify you when a copy is returned.')
+    const r = webAction((st) => services.reserve(st, { titleId: title.id, studentId: me.id, user: me.name }))
+    if (r.status !== 201) { setError(r.body.error); return }
+    setError('')
+    const held = Boolean(r.body.reservation.copyId)
+    toast('good', held ? 'Reserved: a copy is on hold for you' : 'Added to the waiting list', held ? `Pick it up within ${HOLD_DAYS} days.` : 'You will be notified when a copy is returned.')
   }
+  const cancel = () => {
+    webAction((st) => services.cancelReservation(st, { id: mine.id, user: 'Student' }))
+    toast('info', 'Reservation cancelled')
+  }
+  const status = mine && reservationStatus(s, mine)
   return (
     <Modal title={title.title} onClose={onClose} wide>
       <div className="s-detail">
@@ -180,27 +197,34 @@ function BookModal({ me, title, onClose }) {
           <h2 className="s-detail-title">{title.title}</h2>
           <p className="lead">{title.author} · {title.publisher}, {title.year}</p>
           <p>{title.description}</p>
-          {a.available ? (
-            <div className="s-callout s-callout-good"><Icon name="checkCircle" /><div><strong>Available now</strong><span>{a.available} of {a.total} copies · Shelf {shelf}. Take it to the borrowing station and tap your school ID.</span></div></div>
+          {mine ? (
+            <div className={`s-callout${status.ready ? ' s-callout-good' : ''}`}><Icon name="sparkle" /><div><strong>{status.ready ? 'Reserved for you' : 'You are on the waiting list'}</strong><span>{status.text}</span></div></div>
+          ) : a.available ? (
+            <div className="s-callout s-callout-good"><Icon name="checkCircle" /><div><strong>Available now</strong><span>{a.available} of {a.total} copies · Shelf {shelf}. Reserve it to have a copy held for {HOLD_DAYS} days, or take it to the borrowing station.</span></div></div>
           ) : (
-            <div className="s-callout"><Icon name="clock" /><div><strong>All copies are out</strong><span>{nextDue ? `The next copy is due back ${fmtShortDate(nextDue.dueAt)}${t > nextDue.dueAt ? ' (overdue)' : ''}.` : 'Check back soon.'}</span></div></div>
+            <div className="s-callout"><Icon name="clock" /><div><strong>All copies are out</strong><span>{nextDue ? `The next copy is due back ${fmtShortDate(nextDue.dueAt)}${t > nextDue.dueAt ? ' (overdue)' : ''}. Join the waiting list to get it next.` : 'Join the waiting list to get it next.'}</span></div></div>
           )}
-          {!a.available && (reserved ? <Badge status="reserved">You reserved this</Badge> : <button type="button" className="s-btn" onClick={reserve}><Icon name="sparkle" />Reserve a copy</button>)}
+          {borrowing ? <Badge status="borrowed">You are borrowing this book</Badge>
+            : mine ? <button type="button" className="s-btn s-btn-light" onClick={cancel}><Icon name="x" />Cancel reservation</button>
+              : <button type="button" className="s-btn" onClick={reserve}><Icon name="sparkle" />{a.available ? `Reserve · hold for ${HOLD_DAYS} days` : 'Join the waiting list'}</button>}
+          {error && <p className="error-text">{error}</p>}
         </div>
       </div>
     </Modal>
   )
 }
 
-export function StudentBooks({ me }) {
+export function StudentBooks({ me, go }) {
   const s = useStore()
   const t = now()
   const [problems, setProblems] = useState({})
   const loans = activeTxForStudent(s, me.id).sort((a, b) => a.dueAt - b.dueAt)
-  const renew = (tx) => {
-    const r = webAction((st) => services.renew(st, { txId: tx.id, user: me.name }))
-    if (r.status === 200) { toast('good', 'Renewed!', `New due date: ${fmtDate(r.body.transaction.dueAt)} at ${fmtTime(r.body.transaction.dueAt)}`); setProblems({}) }
-    else setProblems({ [tx.id]: r.body.problems })
+  const reservations = s.reservations.filter((r) => r.studentId === me.id)
+  const requests = s.renewalRequests ?? []
+  const requestRenewal = (tx) => {
+    const r = webAction((st) => services.requestRenewal(st, { txId: tx.id, user: me.name }))
+    if (r.status === 201) { toast('good', 'Renewal requested', 'The librarian will review it and you will get a notification.'); setProblems({}) }
+    else setProblems({ [tx.id]: r.body.problems ?? [r.body.error] })
   }
   return (
     <div className="s-page">
@@ -212,6 +236,8 @@ export function StudentBooks({ me }) {
             const title = s.titles.find((x) => x.id === copy.titleId)
             const d = dueLabel(tx.dueAt, t)
             const blockers = renewProblems(s, tx)
+            const pending = requests.find((r) => r.txId === tx.id && r.status === 'pending')
+            const declined = requests.find((r) => r.txId === tx.id && r.status === 'declined' && r.currentDueAt === tx.dueAt)
             return (
               <Tilt key={tx.id} className={`s-loan s-loan-${d.tone}`} max={6}>
                 <Book3D title={title} size="md" />
@@ -224,8 +250,13 @@ export function StudentBooks({ me }) {
                     <div><dt>Due</dt><dd>{fmtShortDateTime(tx.dueAt)}</dd></div>
                   </dl>
                   <p className={`countdown countdown-${d.tone}`}>{d.text}</p>
-                  <button type="button" className="s-btn s-btn-sm" onClick={() => renew(tx)} disabled={blockers.length > 0} title={blockers[0] ?? 'Renew'}><Icon name="refresh" size={16} />Renew{tx.renewals ? ` (${tx.renewals}/${s.settings.renewalLimit})` : ''}</button>
-                  {(problems[tx.id] ?? (blockers.length ? [blockers[0]] : [])).map((p) => <p key={p} className="small muted">{p}</p>)}
+                  {pending ? (
+                    <p className="s-pending"><Icon name="clock" size={15} />Renewal waiting for librarian approval</p>
+                  ) : (
+                    <button type="button" className="s-btn s-btn-sm" onClick={() => requestRenewal(tx)} disabled={blockers.length > 0} title={blockers[0] ?? 'Request renewal'}><Icon name="refresh" size={16} />Request renewal{tx.renewals ? ` (${tx.renewals}/${s.settings.renewalLimit})` : ''}</button>
+                  )}
+                  {declined && !pending && <p className="small s-declined">Last request declined: {declined.reason}</p>}
+                  {!pending && (problems[tx.id] ?? (blockers.length ? [blockers[0]] : [])).map((p) => <p key={p} className="small muted">{p}</p>)}
                 </div>
                 <CountdownRing tx={tx} t={t} />
               </Tilt>
@@ -233,6 +264,29 @@ export function StudentBooks({ me }) {
           })}
         </div>
       )}
+
+      <section className="s-section">
+        <div className="s-section-head"><h2>Reservations</h2>{go && <button type="button" className="link-btn" onClick={() => go('library')}>Reserve a book</button>}</div>
+        {reservations.length === 0 ? <p className="muted">No reservations. Open any book in the library and tap Reserve.</p> : (
+          <ul className="s-reservations">
+            {reservations.map((r) => {
+              const title = s.titles.find((x) => x.id === r.titleId)
+              const st = reservationStatus(s, r)
+              return (
+                <li key={r.id} className={st.ready ? 'ready' : ''}>
+                  <Book3D title={title} size="sm" />
+                  <div>
+                    <strong>{title.title}</strong>
+                    <span className="small">{st.text}</span>
+                  </div>
+                  {st.ready ? <span className="pill pill-ok">Ready</span> : <span className="pill pill-soon">Waiting</span>}
+                  <button type="button" className="icon-btn" aria-label={`Cancel reservation for ${title.title}`} onClick={() => { webAction((x) => services.cancelReservation(x, { id: r.id })); toast('info', 'Reservation cancelled') }}><Icon name="x" size={16} /></button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   )
 }

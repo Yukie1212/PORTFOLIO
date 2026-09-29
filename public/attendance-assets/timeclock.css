@@ -409,3 +409,63 @@ h1, h2, h3, p { font-size: inherit; font-weight: inherit; }
 .switch input:checked + span::after { transform: translateX(1rem); }
 .switch input:focus-visible + span { outline: 2px solid var(--brand-black); outline-offset: 2px; }
 .demo-guide-body { max-height: min(70vh, 34rem); overflow-y: auto; }
+
+/* ---------- Clock card: quiet, product-like ---------- */
+.clock-card { padding: 0; }
+.clock-head {
+    align-items: flex-start; text-align: left; gap: 0.15rem;
+    padding: 1.5rem 1.5rem 1.25rem; background: var(--surface); color: var(--text); border-bottom: 1px solid var(--border);
+}
+.clock-date { font-family: var(--font-sans); text-transform: none; letter-spacing: 0; font-size: 0.95rem; font-weight: 500; color: var(--text-subtle); }
+.clock-time {
+    display: flex; align-items: baseline; gap: 0.1rem; color: var(--text);
+    font-size: clamp(3rem, 12vw, 4.25rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1;
+}
+.clock-time .t-sec { font-size: 0.42em; font-weight: 500; color: #9a9a9a; letter-spacing: -0.01em; }
+.clock-time .t-ap { font-size: 0.3em; font-weight: 600; color: var(--text-subtle); letter-spacing: 0.02em; margin-left: 0.4rem; }
+.clock-shift { font-size: 0.8rem; color: var(--text-subtle); margin-top: 0.5rem; }
+.clock-shift::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-red); margin-right: 0.45rem; vertical-align: middle; }
+@media (min-width: 48rem) { .clock-head { padding: 1.75rem 1.75rem 1.5rem; } }
+
+/* Time in / Time out as one segmented control, not two slabs. */
+.mode-switch { gap: 4px; padding: 4px; border-radius: 10px; background: #f1f1f1; }
+.mode-switch .action,
+.mode-switch .action.time-in,
+.mode-switch .action.time-out {
+    flex-direction: row; min-height: 2.9rem; padding: 0.55rem 0.75rem; border: 0; border-radius: 7px;
+    background: transparent; color: var(--text-muted); font-weight: 600; font-size: 0.95rem; box-shadow: none;
+}
+.mode-switch .action .icon { width: 1.1rem; height: 1.1rem; }
+.mode-switch .action:hover:not(:disabled) { background: rgba(255, 255, 255, 0.6); transform: none; color: var(--text); }
+.mode-switch .action[aria-pressed='true'],
+.mode-switch .action[aria-pressed='true']:hover:not(:disabled) {
+    background: var(--surface); color: var(--text); transform: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+.mode-switch .action.time-in[aria-pressed='true'] .icon { color: var(--brand-red); }
+.mode-switch .action.time-out[aria-pressed='true'] .icon { color: var(--text); }
+.mode-switch .selected-dot { display: none; }
+.mode-hint { margin: 0.5rem 0.25rem 1rem; font-size: 0.78rem; color: var(--text-subtle); }
+
+/* Scan methods as list-style rows. */
+#scanButtons { gap: 0.6rem; }
+#scanButtons .action.inline {
+    justify-content: flex-start; gap: 0.75rem; min-height: 3.5rem; padding: 0.7rem 0.9rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); text-align: left;
+}
+#scanButtons .action.inline:hover:not(:disabled) { border-color: #c9c9c9; background: #fafafa; transform: none; }
+#scanButtons .action.inline .icon { width: 1.35rem; height: 1.35rem; color: var(--text); }
+.method-text { display: flex; flex-direction: column; line-height: 1.2; }
+.method-text > span { font-weight: 600; font-size: 0.93rem; }
+.method-text small { font-weight: 400; font-size: 0.76rem; color: var(--text-subtle); }
+.button-grid + .button-grid { margin-top: 0; }
+
+/* Plain labels instead of spaced-out capitals. */
+.status-text, .processing p { font-family: var(--font-sans); text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 0.82rem; }
+.status-text { color: var(--text-subtle); }
+.keypad input, .submit { border-radius: 8px; }
+.kiosk-eyebrow, .eyebrow, .kiosk-pill, .type-pill, .present-count { font-family: var(--font-sans); text-transform: none; letter-spacing: 0; }
+.kiosk-eyebrow { font-size: 0.75rem; color: var(--text-subtle); }
+.eyebrow { font-size: 0.75rem; color: var(--text-subtle); font-weight: 500; }
+.kiosk-pill { font-size: 0.78rem; font-weight: 500; }
+.type-pill { font-size: 0.7rem; font-weight: 600; }

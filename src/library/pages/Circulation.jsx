@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import RenewalRequests from '../components/RenewalRequests.jsx'
 import { BorrowStation, ReturnStation } from '../components/Stations.jsx'
 import { Avatar, Badge, Empty, Icon, PageHeader, Panel } from '../components/ui.jsx'
 import { toast } from '../lib/bus.js'
@@ -62,11 +63,50 @@ export function Borrowing() {
   return (
     <div className="page">
       <PageHeader eyebrow="04 / Circulation" title="Borrowing" />
+      <RenewalRequests />
       <BorrowStation />
       <Panel title="Active loans" sub={`${rows.length} books currently out`} actions={<label className="search search-sm"><Icon name="search" size={15} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter" aria-label="Filter loans" /></label>} flush>
         <LoanTable rows={rows} />
       </Panel>
+      <Reservations />
     </div>
+  )
+}
+
+function Reservations() {
+  const s = useStore()
+  const list = [...s.reservations].sort((a, b) => (a.copyId ? 0 : 1) - (b.copyId ? 0 : 1) || a.createdAt - b.createdAt)
+  const cancel = (r) => {
+    webAction((st) => services.cancelReservation(st, { id: r.id, user: 'Librarian' }))
+    toast('info', 'Reservation cancelled', 'The student has been notified.')
+  }
+  return (
+    <Panel title="Reservations" sub={`${list.filter((r) => r.copyId).length} on the hold shelf · ${list.filter((r) => !r.copyId).length} waiting`} flush>
+      {list.length === 0 ? <Empty title="No reservations" icon="sparkle" /> : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Book</th><th>Student</th><th>Reserved</th><th>Status</th><th className="num">Actions</th></tr></thead>
+            <tbody>
+              {list.map((r) => {
+                const title = s.titles.find((x) => x.id === r.titleId)
+                const student = s.students.find((x) => x.id === r.studentId)
+                const copy = r.copyId && s.copies.find((c) => c.id === r.copyId)
+                const position = s.reservations.filter((x) => x.titleId === r.titleId && !x.copyId).sort((a, b) => a.createdAt - b.createdAt).findIndex((x) => x.id === r.id) + 1
+                return (
+                  <tr key={r.id}>
+                    <td>{title.title}{copy && <span className="sub mono">#{copy.copyNo} · {copy.rfid} · shelf {copy.shelf}</span>}</td>
+                    <td><div className="cell-person"><Avatar student={student} size={30} /><div>{student.name}<span className="sub mono">{student.studentId}</span></div></div></td>
+                    <td>{fmtShortDateTime(r.createdAt)}</td>
+                    <td>{copy ? <Badge status="reserved">On hold until {fmtShortDateTime(r.expiresAt)}</Badge> : <Badge status="soon">#{position} in line</Badge>}</td>
+                    <td className="num"><button type="button" className="btn btn-sm btn-ghost" onClick={() => cancel(r)}><Icon name="x" size={15} />Cancel</button></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
   )
 }
 

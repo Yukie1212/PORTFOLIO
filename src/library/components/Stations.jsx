@@ -84,7 +84,7 @@ export function BorrowStation({ device = 'BORROW-01', compact = false }) {
     const list = []
     if (copy.status === 'borrowed') list.push('This copy is already borrowed. Please hand it to the librarian.')
     if (copy.status === 'lost' || copy.status === 'maintenance') list.push(`This copy is marked ${copy.status}. Please hand it to the librarian.`)
-    if (copy.status === 'reserved' && !s.reservations.some((r) => r.titleId === copy.titleId && r.studentId === student.id)) list.push('This copy is on hold for another student.')
+    if (copy.status === 'reserved' && s.reservations.some((r) => r.copyId === copy.id && r.studentId !== student.id)) list.push('This copy is on hold for another student.')
     setProblems(list)
     if (list.length) return
     setCopyId(copy.id)

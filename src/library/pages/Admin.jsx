@@ -13,7 +13,7 @@ export function Notifications() {
   const alerts = s.notifications.filter((n) => n.audience === 'librarian' && (!kind || n.kind === kind))
   const unread = s.notifications.filter((n) => n.audience === 'librarian' && !n.read).length
   const markAll = () => webAction((st) => st.notifications.forEach((n) => { if (n.audience === 'librarian') n.read = true }))
-  const KINDS = [['', 'All'], ['alarm', 'Gate alarms'], ['overdue', 'Overdue'], ['due-today', 'Due today'], ['face', 'Face failures'], ['suspicious', 'Suspicious scans'], ['lost', 'Lost books'], ['account', 'Accounts']]
+  const KINDS = [['', 'All'], ['alarm', 'Gate alarms'], ['overdue', 'Overdue'], ['due-today', 'Due today'], ['face', 'Face failures'], ['suspicious', 'Suspicious scans'], ['lost', 'Lost books'], ['account', 'Accounts'], ['renewal', 'Renewal requests'], ['reservation', 'Reservations']]
   return (
     <div className="page">
       <PageHeader eyebrow="09 / Alerts" title="Notification center">
@@ -29,7 +29,7 @@ export function Notifications() {
             <ul className="notif-list">
               {alerts.slice(0, 80).map((n) => (
                 <li key={n.id} className={`notif notif-${n.kind}${n.read ? '' : ' unread'}`}>
-                  <span className="notif-icon"><Icon name={n.kind === 'alarm' ? 'alert' : n.kind === 'face' ? 'face' : n.kind === 'overdue' ? 'clock' : n.kind === 'suspicious' ? 'tag' : 'bell'} size={16} /></span>
+                  <span className="notif-icon"><Icon name={n.kind === 'alarm' ? 'alert' : n.kind === 'face' ? 'face' : n.kind === 'overdue' ? 'clock' : n.kind === 'suspicious' ? 'tag' : n.kind === 'renewal' ? 'refresh' : n.kind === 'reservation' ? 'sparkle' : 'bell'} size={16} /></span>
                   <div><strong>{n.title}</strong><p>{n.body}</p><span className="mono small">{fmtShortDateTime(n.at)}</span></div>
                   {!n.read && <button type="button" className="link-btn" onClick={() => webAction((st) => { st.notifications.find((x) => x.id === n.id).read = true })}>Mark read</button>}
                 </li>
@@ -143,7 +143,8 @@ const SCHEMA = [
   ['borrow_transactions', 'id, book_copy_id, student_id, borrowed_at, due_at, status, renewals, device_id, verification'],
   ['return_transactions', 'id, borrow_transaction_id, returned_at, late, device_id, processed_by'],
   ['renewals', 'id, borrow_transaction_id, old_due_at, new_due_at, renewed_at'],
-  ['reservations', 'id, book_id, student_id, created_at, fulfilled_at'],
+  ['reservations', 'id, book_id, student_id, book_copy_id (held), created_at, ready_at, expires_at'],
+  ['renewal_requests', 'id, borrow_transaction_id, student_id, requested_at, proposed_due_at, status, decided_by, reason'],
   ['notifications', 'id, audience, student_id, kind, title, body, read_at'],
   ['notification_logs', 'id, notification_id, channel, recipient, provider, status, sent_at'],
   ['gate_events', 'id, device_id, rfid_uid, book_copy_id, student_id, result, reason, occurred_at'],
